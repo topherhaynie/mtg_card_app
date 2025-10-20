@@ -1,20 +1,27 @@
 """RAG Manager for semantic search of MTG cards using vector embeddings.
 
 This manager provides semantic search capabilities by:
-1. Embedding card text using sentence transformers
-2. Storing embeddings in ChromaDB
+1. Embedding card text using an embedding service
+2. Storing embeddings in a vector store
 3. Enabling similarity search for finding related cards
+
+The manager is now decoupled from specific implementations:
+- Uses EmbeddingService protocol (default: SentenceTransformers)
+- Uses VectorStoreService protocol (default: ChromaDB)
 """
 
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import chromadb
-from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
-
 from mtg_card_app.domain.entities import Card
+from mtg_card_app.interfaces.embedding import (
+    EmbeddingService,
+    SentenceTransformerEmbeddingService,
+)
+from mtg_card_app.interfaces.vector_store import (
+    ChromaVectorStoreService,
+    VectorStoreService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,93 +29,47 @@ logger = logging.getLogger(__name__)
 class RAGManager:
     """Manages vector embeddings and semantic search for MTG cards.
 
-    This manager uses:
-    - sentence-transformers for creating embeddings
-    - ChromaDB for vector storage and similarity search
+    This manager is now decoupled from specific implementations:
+    - Uses EmbeddingService for text-to-vector conversion
+    - Uses VectorStoreService for storage and search
+
+    Default implementations:
+    - Embedding: SentenceTransformers (sentence-transformers/all-MiniLM-L6-v2)
+    - Vector Store: ChromaDB (local persistent storage)
 
     Storage:
     - Model: ~80 MB (cached in ~/.cache/huggingface/)
-    - Embeddings: ~16 KB per card
-    - For 1,000 cards: ~16 MB
-    - For 27,000 cards: ~421 MB
+    - Embeddings: ~40 KB per card (includes HNSW index overhead)
+    - For 1,000 cards: ~40 MB
+    - For 27,000 cards: ~1.1 GB
     """
-
-    # Model selection - this one is small, fast, and good quality
-    DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-    COLLECTION_NAME = "mtg_cards"
 
     def __init__(
         self,
         data_dir: str = "data",
-        model_name: Optional[str] = None,
-        device: str = "cpu",
+        embedding_service: Optional[EmbeddingService] = None,
+        vector_store: Optional[VectorStoreService] = None,
     ):
         """Initialize the RAG manager.
 
         Args:
-            data_dir: Directory for storing ChromaDB data
-            model_name: Embedding model name (uses DEFAULT_MODEL if None)
-            device: Device for embedding model ('cpu' or 'cuda')
+            data_dir: Directory for storing data (used if services not provided)
+            embedding_service: Embedding service (uses SentenceTransformers if None)
+            vector_store: Vector store service (uses ChromaDB if None)
 
         """
-        self.data_dir = Path(data_dir)
-        self.chroma_dir = self.data_dir / "chroma"
-        self.chroma_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir = data_dir
 
-        self.model_name = model_name or self.DEFAULT_MODEL
-        self.device = device
+        # Initialize embedding service
+        self.embedding_service = embedding_service or SentenceTransformerEmbeddingService()
 
-        # Initialize components (lazy loading)
-        self._embedding_model: Optional[SentenceTransformer] = None
-        self._chroma_client: Optional[chromadb.Client] = None
-        self._collection: Optional[chromadb.Collection] = None
+        # Initialize vector store
+        self.vector_store = vector_store or ChromaVectorStoreService(
+            data_dir=f"{data_dir}/chroma",
+            collection_name="mtg_cards",
+        )
 
-        logger.info(f"Initialized RAGManager with data_dir: {data_dir}")
-
-    @property
-    def embedding_model(self) -> SentenceTransformer:
-        """Get or load the embedding model."""
-        if self._embedding_model is None:
-            logger.info(f"Loading embedding model: {self.model_name}")
-            self._embedding_model = SentenceTransformer(
-                self.model_name,
-                device=self.device,
-            )
-            logger.info("Embedding model loaded successfully")
-        return self._embedding_model
-
-    @property
-    def chroma_client(self) -> chromadb.Client:
-        """Get or create the ChromaDB client."""
-        if self._chroma_client is None:
-            logger.info(f"Initializing ChromaDB at: {self.chroma_dir}")
-            self._chroma_client = chromadb.PersistentClient(
-                path=str(self.chroma_dir),
-                settings=Settings(
-                    anonymized_telemetry=False,
-                    allow_reset=True,
-                ),
-            )
-            logger.debug("ChromaDB client initialized")
-        return self._chroma_client
-
-    @property
-    def collection(self) -> chromadb.Collection:
-        """Get or create the card embeddings collection."""
-        if self._collection is None:
-            try:
-                self._collection = self.chroma_client.get_collection(
-                    name=self.COLLECTION_NAME,
-                )
-                logger.debug(f"Loaded existing collection: {self.COLLECTION_NAME}")
-            except Exception:
-                # Collection doesn't exist, create it
-                self._collection = self.chroma_client.create_collection(
-                    name=self.COLLECTION_NAME,
-                    metadata={"description": "MTG card embeddings for semantic search"},
-                )
-                logger.info(f"Created new collection: {self.COLLECTION_NAME}")
-        return self._collection
+        logger.info("Initialized RAGManager with data_dir: %s", data_dir)
 
     def _build_card_text(self, card: Card) -> str:
         """Build searchable text representation of a card.
@@ -189,28 +150,28 @@ class RAGManager:
         """
         try:
             # Check if already embedded
-            existing = self.collection.get(ids=[card.id])
-            if existing and existing["ids"]:
-                logger.debug(f"Card already embedded: {card.name}")
+            if self.vector_store.exists(card.id):
+                logger.debug("Card already embedded: %s", card.name)
                 return True
 
             # Build text and embed
             card_text = self._build_card_text(card)
-            embedding = self.embedding_model.encode(card_text).tolist()
+            embedding = self.embedding_service.embed_text(card_text)
 
-            # Store in ChromaDB
-            self.collection.add(
-                ids=[card.id],
-                embeddings=[embedding],
-                metadatas=[self._build_metadata(card)],
-                documents=[card_text],
+            # Store in vector database
+            success = self.vector_store.add_embedding(
+                id=card.id,
+                embedding=embedding,
+                metadata=self._build_metadata(card),
+                document=card_text,
             )
 
-            logger.debug(f"Embedded card: {card.name}")
-            return True
+            if success:
+                logger.debug("Embedded card: %s", card.name)
+            return success
 
         except Exception as e:
-            logger.error(f"Error embedding card {card.name}: {e}")
+            logger.error("Error embedding card %s: %s", card.name, e)
             return False
 
     def embed_cards(self, cards: List[Card], batch_size: int = 32) -> Dict[str, int]:
@@ -231,7 +192,7 @@ class RAGManager:
             "failed": 0,
         }
 
-        logger.info(f"Embedding {len(cards)} cards in batches of {batch_size}")
+        logger.info("Embedding %d cards in batches of %d", len(cards), batch_size)
 
         for i in range(0, len(cards), batch_size):
             batch = cards[i : i + batch_size]
@@ -239,8 +200,7 @@ class RAGManager:
             for card in batch:
                 try:
                     # Check if already exists
-                    existing = self.collection.get(ids=[card.id])
-                    if existing and existing["ids"]:
+                    if self.vector_store.exists(card.id):
                         stats["skipped"] += 1
                         continue
 
@@ -251,14 +211,17 @@ class RAGManager:
                         stats["failed"] += 1
 
                 except Exception as e:
-                    logger.error(f"Error in batch processing: {e}")
+                    logger.exception("Error in batch processing: %s", e)
                     stats["failed"] += 1
 
             if (i + batch_size) % 100 == 0:
-                logger.info(f"Processed {i + batch_size}/{len(cards)} cards")
+                logger.info("Processed %d/%d cards", i + batch_size, len(cards))
 
         logger.info(
-            f"Embedding complete: {stats['success']} success, {stats['skipped']} skipped, {stats['failed']} failed",
+            "Embedding complete: %d success, %d skipped, %d failed",
+            stats["success"],
+            stats["skipped"],
+            stats["failed"],
         )
 
         return stats
@@ -282,31 +245,20 @@ class RAGManager:
         """
         try:
             # Embed the query
-            query_embedding = self.embedding_model.encode(query).tolist()
+            query_embedding = self.embedding_service.embed_text(query)
 
-            # Search in ChromaDB
-            where_filter = filters if filters else None
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
+            # Search in vector store
+            similar_cards = self.vector_store.search_similar(
+                query_embedding=query_embedding,
                 n_results=n_results,
-                where=where_filter,
+                filters=filters,
             )
 
-            # Parse results
-            similar_cards = []
-            if results and results["ids"] and results["ids"][0]:
-                for i, card_id in enumerate(results["ids"][0]):
-                    distance = results["distances"][0][i]
-                    # Convert distance to similarity (1 - distance)
-                    similarity = 1 - distance
-                    metadata = results["metadatas"][0][i]
-                    similar_cards.append((card_id, similarity, metadata))
-
-            logger.debug(f"Found {len(similar_cards)} similar cards for query: {query}")
+            logger.debug("Found %d similar cards for query: %s", len(similar_cards), query)
             return similar_cards
 
         except Exception as e:
-            logger.error(f"Error searching similar cards: {e}")
+            logger.exception("Error searching similar cards: %s", e)
             return []
 
     def search_similar_to_card(
@@ -342,17 +294,7 @@ class RAGManager:
             Embedding vector or None if not found
 
         """
-        try:
-            result = self.collection.get(
-                ids=[card_id],
-                include=["embeddings"],
-            )
-            if result and result["embeddings"]:
-                return result["embeddings"][0]
-            return None
-        except Exception as e:
-            logger.error(f"Error retrieving embedding: {e}")
-            return None
+        return self.vector_store.get_embedding(card_id)
 
     def remove_card(self, card_id: str) -> bool:
         """Remove a card's embedding.
@@ -364,13 +306,7 @@ class RAGManager:
             True if removed, False otherwise
 
         """
-        try:
-            self.collection.delete(ids=[card_id])
-            logger.debug(f"Removed embedding for card: {card_id}")
-            return True
-        except Exception as e:
-            logger.error(f"Error removing embedding: {e}")
-            return False
+        return self.vector_store.delete(card_id)
 
     def clear_all(self) -> bool:
         """Clear all embeddings from the collection.
@@ -379,14 +315,7 @@ class RAGManager:
             True if successful, False otherwise
 
         """
-        try:
-            self.chroma_client.delete_collection(name=self.COLLECTION_NAME)
-            self._collection = None  # Force recreation
-            logger.info("Cleared all embeddings")
-            return True
-        except Exception as e:
-            logger.error(f"Error clearing embeddings: {e}")
-            return False
+        return self.vector_store.clear_all()
 
     def get_stats(self) -> Dict[str, Any]:
         """Get statistics about the RAG system.
@@ -395,20 +324,11 @@ class RAGManager:
             Dictionary with statistics
 
         """
-        try:
-            count = self.collection.count()
+        # Combine stats from both services
+        embedding_stats = self.embedding_service.get_stats()
+        vector_stats = self.vector_store.get_stats()
 
-            # Get disk usage
-            chroma_size = sum(f.stat().st_size for f in self.chroma_dir.rglob("*") if f.is_file())
-
-            return {
-                "total_embeddings": count,
-                "model_name": self.model_name,
-                "collection_name": self.COLLECTION_NAME,
-                "disk_usage_bytes": chroma_size,
-                "disk_usage_mb": round(chroma_size / (1024 * 1024), 2),
-                "chroma_dir": str(self.chroma_dir),
-            }
-        except Exception as e:
-            logger.error(f"Error getting stats: {e}")
-            return {"error": str(e)}
+        return {
+            **embedding_stats,
+            **vector_stats,
+        }

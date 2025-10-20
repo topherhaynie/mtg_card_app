@@ -33,15 +33,18 @@ def main():
     print("-" * 70)
     rag = RAGManager(data_dir="data")
     interactor = Interactor()
-    print(f"Using model: {rag.model_name}")
+    stats = rag.get_stats()
+    print(f"Embedding service: {stats.get('service', 'Unknown')}")
+    print(f"Model: {stats.get('model_name', 'Unknown')}")
+    print(f"Vector store: {stats.get('service', 'Unknown')}")
     print()
 
-    # ===== Step 2: Initial Stats =====
+    # ===== Step 2: Initial Storage Stats =====
     print("2. Initial Storage Stats")
     print("-" * 70)
     stats = rag.get_stats()
-    print(f"Embeddings in database: {stats['total_embeddings']}")
-    print(f"Storage usage: {stats['disk_usage_mb']} MB")
+    print(f"Embeddings in database: {stats.get('total_embeddings', 0)}")
+    print(f"Storage usage: {stats.get('disk_usage_mb', 0)} MB")
     print()
 
     # ===== Step 3: Load Sample Cards =====
