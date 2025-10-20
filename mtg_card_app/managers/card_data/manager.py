@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from mtg_card_app.domain.entities import Card
-from mtg_card_app.interfaces.scryfall import CardNotFoundError, ScryfallClient
+from mtg_card_app.interfaces.card_data import CardDataService, ScryfallCardDataService
 from mtg_card_app.managers.db.services import CardService
 
 logger = logging.getLogger(__name__)
@@ -13,27 +13,32 @@ logger = logging.getLogger(__name__)
 class CardDataManager:
     """Manages card data fetching and caching.
 
-    This manager coordinates between the Scryfall API and local storage,
+    This manager coordinates between a card data service and local storage,
     implementing a caching strategy to minimize API calls.
+    The card data service can be any implementation (Scryfall, MTGJSON, etc.).
     """
 
-    def __init__(self, card_service: CardService, scryfall_client: Optional[ScryfallClient] = None):
+    def __init__(
+        self,
+        card_service: CardService,
+        card_data_service: Optional[CardDataService] = None,
+    ):
         """Initialize the card data manager.
 
         Args:
             card_service: Service for local card storage
-            scryfall_client: Optional Scryfall client (creates one if not provided)
+            card_data_service: Optional card data service (uses Scryfall if not provided)
 
         """
         self.card_service = card_service
-        self.scryfall_client = scryfall_client or ScryfallClient()
+        self.card_data_service = card_data_service or ScryfallCardDataService()
 
     def get_card(self, name: str, fetch_if_missing: bool = True) -> Optional[Card]:
-        """Get a card by name, fetching from Scryfall if not in local storage.
+        """Get a card by name, fetching from card data service if not in local storage.
 
         Args:
             name: Card name
-            fetch_if_missing: Whether to fetch from Scryfall if not found locally
+            fetch_if_missing: Whether to fetch from service if not found locally
 
         Returns:
             Card entity or None
@@ -46,14 +51,14 @@ class CardDataManager:
             logger.debug(f"Found card '{name}' in local storage")
             return card
 
-        # Fetch from Scryfall if not found locally
+        # Fetch from card data service if not found locally
         if fetch_if_missing:
-            logger.info(f"Fetching card '{name}' from Scryfall")
+            logger.info(f"Fetching card '{name}' from {self.card_data_service.get_service_name()}")
             try:
                 card = self.fetch_and_store_card(name)
                 return card
-            except CardNotFoundError:
-                logger.warning(f"Card '{name}' not found in Scryfall")
+            except (ValueError, Exception) as e:
+                logger.warning(f"Card '{name}' not found: {e}")
                 return None
 
         return None
@@ -75,22 +80,23 @@ class CardDataManager:
         if card:
             return card
 
-        # Fetch from Scryfall if not found
+        # Fetch from card data service if not found
         if fetch_if_missing:
             try:
-                scryfall_data = self.scryfall_client.get_card_by_id(card_id)
-                card = Card.from_scryfall(scryfall_data)
-                self.card_service.create(card)
-                logger.info(f"Fetched and stored card: {card.name}")
-                return card
-            except CardNotFoundError:
-                logger.warning(f"Card ID '{card_id}' not found in Scryfall")
+                card_data = self.card_data_service.get_card_by_id(card_id)
+                if card_data:
+                    card = Card.from_scryfall(card_data)
+                    self.card_service.create(card)
+                    logger.info(f"Fetched and stored card: {card.name}")
+                    return card
+            except Exception as e:
+                logger.warning(f"Card ID '{card_id}' not found: {e}")
                 return None
 
         return None
 
     def fetch_and_store_card(self, name: str, fuzzy: bool = True) -> Card:
-        """Fetch a card from Scryfall and store it locally.
+        """Fetch a card from the card data service and store it locally.
 
         Args:
             name: Card name
@@ -100,11 +106,14 @@ class CardDataManager:
             Card entity
 
         Raises:
-            CardNotFoundError: If card not found
+            Exception: If card not found
 
         """
-        scryfall_data = self.scryfall_client.get_card_by_name(name, fuzzy=fuzzy)
-        card = Card.from_scryfall(scryfall_data)
+        card_data = self.card_data_service.get_card_by_name(name, exact=not fuzzy)
+        if not card_data:
+            raise ValueError(f"Card '{name}' not found")
+
+        card = Card.from_scryfall(card_data)
 
         # Store in local database
         if self.card_service.exists(card.id):
@@ -140,12 +149,12 @@ class CardDataManager:
             results.extend(local_results)
 
         if use_scryfall:
-            logger.info(f"Searching Scryfall: {query}")
-            scryfall_results = self.scryfall_client.search_cards(query)
+            logger.info(f"Searching card data service: {query}")
+            search_results = self.card_data_service.search_cards(query)
 
             # Convert and store results
-            for scryfall_data in scryfall_results:
-                card = Card.from_scryfall(scryfall_data)
+            for card_data in search_results:
+                card = Card.from_scryfall(card_data)
 
                 # Store if not exists
                 if not self.card_service.exists(card.id):
@@ -153,7 +162,7 @@ class CardDataManager:
 
                 results.append(card)
 
-            logger.info(f"Found {len(scryfall_results)} cards from Scryfall")
+            logger.info(f"Found {len(search_results)} cards from card data service")
 
         return results
 
@@ -187,7 +196,7 @@ class CardDataManager:
                 self.fetch_and_store_card(name, fuzzy=fuzzy)
                 stats["successful"] += 1
 
-            except CardNotFoundError:
+            except ValueError:
                 stats["failed"] += 1
                 stats["errors"].append(f"Card not found: {name}")
                 logger.warning(f"Could not find card: {name}")
@@ -198,7 +207,7 @@ class CardDataManager:
 
         logger.info(
             f"Bulk import complete: {stats['successful']} successful, "
-            f"{stats['failed']} failed, {stats['skipped']} skipped"
+            f"{stats['failed']} failed, {stats['skipped']} skipped",
         )
 
         return stats
@@ -225,10 +234,11 @@ class CardDataManager:
         refreshed = 0
         for card_id in card_ids:
             try:
-                scryfall_data = self.scryfall_client.get_card_by_id(card_id)
-                card = Card.from_scryfall(scryfall_data)
-                self.card_service.update(card)
-                refreshed += 1
+                card_data = self.card_data_service.get_card_by_id(card_id)
+                if card_data:
+                    card = Card.from_scryfall(card_data)
+                    self.card_service.update(card)
+                    refreshed += 1
             except Exception as e:
                 logger.error(f"Error refreshing card {card_id}: {e}")
 
@@ -239,5 +249,6 @@ class CardDataManager:
         """Get statistics about card data."""
         return {
             "total_cards": self.card_service.count(),
-            "scryfall_requests": self.scryfall_client.get_request_stats(),
+            "service": self.card_data_service.get_service_name(),
+            "service_stats": self.card_data_service.get_stats(),
         }

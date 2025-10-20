@@ -114,7 +114,8 @@ def main():
     print(f"Total cards in database: {final_stats['database']['total_cards']}")
     print(f"Total combos in database: {final_stats['database']['total_combos']}")
     print(f"Infinite combos: {final_stats['database']['infinite_combos']}")
-    print(f"Scryfall API requests made: {final_stats['card_data']['scryfall_requests']['total_requests']}")
+    print(f"Card data service: {final_stats['card_data']['service']}")
+    print(f"Service API requests made: {final_stats['card_data_service']['total_requests']}")
     print()
 
     # ===== Architecture Summary =====
