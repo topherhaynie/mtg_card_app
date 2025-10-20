@@ -14,12 +14,10 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from mtg_card_app.domain.entities import Card
-from mtg_card_app.interfaces.embedding import (
+from mtg_card_app.managers.rag.services.embedding import (
     EmbeddingService,
-    SentenceTransformerEmbeddingService,
 )
-from mtg_card_app.interfaces.vector_store import (
-    ChromaVectorStoreService,
+from mtg_card_app.managers.rag.services.vector_store import (
     VectorStoreService,
 )
 
@@ -46,30 +44,21 @@ class RAGManager:
 
     def __init__(
         self,
-        data_dir: str = "data",
-        embedding_service: Optional[EmbeddingService] = None,
-        vector_store: Optional[VectorStoreService] = None,
+        embedding_service: EmbeddingService,
+        vector_store: VectorStoreService,
     ):
         """Initialize the RAG manager.
 
         Args:
-            data_dir: Directory for storing data (used if services not provided)
-            embedding_service: Embedding service (uses SentenceTransformers if None)
-            vector_store: Vector store service (uses ChromaDB if None)
+            embedding_service: Embedding service implementation (required)
+            vector_store: Vector store service implementation (required)
 
         """
-        self.data_dir = data_dir
+        # Store injected services
+        self.embedding_service = embedding_service
+        self.vector_store = vector_store
 
-        # Initialize embedding service
-        self.embedding_service = embedding_service or SentenceTransformerEmbeddingService()
-
-        # Initialize vector store
-        self.vector_store = vector_store or ChromaVectorStoreService(
-            data_dir=f"{data_dir}/chroma",
-            collection_name="mtg_cards",
-        )
-
-        logger.info("Initialized RAGManager with data_dir: %s", data_dir)
+        logger.info("Initialized RAGManager with injected services")
 
     def _build_card_text(self, card: Card) -> str:
         """Build searchable text representation of a card.

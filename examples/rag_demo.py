@@ -9,8 +9,7 @@ This demonstrates:
 
 import logging
 
-from mtg_card_app.core import Interactor
-from mtg_card_app.managers.rag import RAGManager
+from mtg_card_app.core import Interactor, ManagerRegistry
 
 # Configure logging
 logging.basicConfig(
@@ -31,7 +30,8 @@ def main():
     # ===== Step 1: Initialize =====
     print("1. Initializing RAG Manager")
     print("-" * 70)
-    rag = RAGManager(data_dir="data")
+    registry = ManagerRegistry(data_dir="data")
+    rag = registry.rag_manager
     interactor = Interactor()
     stats = rag.get_stats()
     print(f"Embedding service: {stats.get('service', 'Unknown')}")

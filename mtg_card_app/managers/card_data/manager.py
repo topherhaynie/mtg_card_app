@@ -4,7 +4,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from mtg_card_app.domain.entities import Card
-from mtg_card_app.interfaces.card_data import CardDataService, ScryfallCardDataService
+from mtg_card_app.managers.card_data.services import (
+    CardDataService,
+)
 from mtg_card_app.managers.db.services import CardService
 
 logger = logging.getLogger(__name__)
@@ -21,17 +23,17 @@ class CardDataManager:
     def __init__(
         self,
         card_service: CardService,
-        card_data_service: Optional[CardDataService] = None,
+        card_data_service: CardDataService,
     ):
         """Initialize the card data manager.
 
         Args:
             card_service: Service for local card storage
-            card_data_service: Optional card data service (uses Scryfall if not provided)
+            card_data_service: Card data service implementation (required)
 
         """
         self.card_service = card_service
-        self.card_data_service = card_data_service or ScryfallCardDataService()
+        self.card_data_service = card_data_service
 
     def get_card(self, name: str, fetch_if_missing: bool = True) -> Optional[Card]:
         """Get a card by name, fetching from card data service if not in local storage.
