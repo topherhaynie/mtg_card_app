@@ -40,3 +40,14 @@ mtg-card-search = "mtg_card_app.card_search.__main__:main"
 where = ["."]
 include = ["mtg_card_app*"]
 exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+]
+
