@@ -37,18 +37,25 @@ class QueryOrchestrator:
 Query: "{user_query}"
 
 Extract these filters if mentioned:
-- colors: single letter codes (W=white, U=blue, B=black, R=red, G=green). If "mono" return single color, if multiple colors return comma-separated.
+- colors: single letter codes ONLY (W=white, U=blue, B=black, R=red, G=green)
+  * For mono-color: Use single letter like "U" or "R"
+  * For multi-color: Use comma-separated like "U,B" or "R,G"
+  * Examples: "blue" -> "U", "mono-red" -> "R", "Grixis" -> "U,B,R"
 - max_cmc: maximum converted mana cost as integer (if "under X" or "X or less" is mentioned)
-- card_type: the card type if specified (Creature, Instant, Sorcery, Enchantment, Artifact, Planeswalker, Land)
 
-Return ONLY a valid JSON object with the extracted filters. If a filter is not mentioned, omit it.
-Do not include explanations or markdown formatting.
+NOTE: Do NOT extract card type as a filter. Card types will be handled by semantic search.
 
-Example outputs:
+IMPORTANT: Return ONLY a valid JSON object with extracted filters. No explanations, no markdown.
+If a filter is not mentioned, omit it entirely from the JSON.
+
+Valid examples:
 {{"colors": "U"}}
 {{"colors": "U,B", "max_cmc": 3}}
-{{"card_type": "Creature", "colors": "G"}}
-{{}}"""
+{{"colors": "R", "max_cmc": 3}}
+{{"max_cmc": 2}}
+{{}}
+
+Your JSON response:"""
 
         try:
             response = self.llm.generate(extraction_prompt)
@@ -64,21 +71,24 @@ Example outputs:
             logger.debug(f"Extracted filters: {filters}")
 
             # Convert to ChromaDB filter format
-            chroma_filters = {}
+            # ChromaDB requires $and/$or operators when multiple filters are present
+            filter_conditions = []
 
             # Handle colors - ChromaDB uses exact match, so we check color_identity field
-            if "colors" in filters:
-                chroma_filters["color_identity"] = filters["colors"]
+            if filters.get("colors"):
+                filter_conditions.append({"color_identity": filters["colors"]})
 
             # Handle CMC - use $lte operator for "less than or equal"
-            if "max_cmc" in filters:
-                chroma_filters["cmc"] = {"$lte": filters["max_cmc"]}
+            # Skip if None/null value
+            if "max_cmc" in filters and filters["max_cmc"] is not None:
+                filter_conditions.append({"cmc": {"$lte": filters["max_cmc"]}})
 
-            # Handle card type - use $contains for partial match
-            if "card_type" in filters:
-                chroma_filters["type_line"] = {"$contains": filters["card_type"]}
-
-            return chroma_filters
+            # Combine conditions with $and if multiple filters
+            if len(filter_conditions) == 0:
+                return {}
+            if len(filter_conditions) == 1:
+                return filter_conditions[0]
+            return {"$and": filter_conditions}
 
         except (json.JSONDecodeError, Exception) as e:
             logger.warning(f"Failed to extract filters from query: {e}")
