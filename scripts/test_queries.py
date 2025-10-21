@@ -1,5 +1,7 @@
 """Manual query testing script for validation.
 
+MIGRATED: Now uses Interactor instead of deprecated QueryOrchestrator.
+
 Tests real-world queries to validate:
 1. Semantic search quality at scale
 2. Query performance
@@ -16,10 +18,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from mtg_card_app.core.interactor import Interactor
 from mtg_card_app.core.manager_registry import ManagerRegistry
-from mtg_card_app.core.orchestrator import QueryOrchestrator
-from mtg_card_app.managers.llm.manager import LLMManager
-from mtg_card_app.managers.llm.services.ollama_service import OllamaLLMService
 
 # Configure logging
 logging.basicConfig(
@@ -29,14 +29,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def test_query(orchestrator: QueryOrchestrator, query: str, query_num: int, total: int):
+def test_query(interactor: Interactor, query: str, query_num: int, total: int):
     """Test a single query and display results."""
     print(f"\n{'=' * 80}")
     print(f'QUERY {query_num}/{total}: "{query}"')
     print(f"{'=' * 80}")
 
     start_time = time.time()
-    response = orchestrator.answer_query(query)
+    response = interactor.answer_natural_language_query(query)
     elapsed = time.time() - start_time
 
     print(f"\n📊 Response Time: {elapsed:.2f}s")
@@ -53,10 +53,9 @@ def main():
     print("=" * 80)
     print()
 
-    # Initialize orchestrator
+    # Initialize interactor with manager registry
     registry = ManagerRegistry.get_instance()
-    llm_manager = LLMManager(service=OllamaLLMService(model="llama3"))
-    orchestrator = QueryOrchestrator(registry=registry, llm_manager=llm_manager)
+    interactor = Interactor(registry=registry)
 
     # Test queries covering different use cases
     test_queries = [
@@ -79,7 +78,7 @@ def main():
 
     for i, query in enumerate(test_queries, 1):
         start = time.time()
-        test_query(orchestrator, query, i, total_queries)
+        test_query(interactor, query, i, total_queries)
         query_time = time.time() - start
         total_time += query_time
 

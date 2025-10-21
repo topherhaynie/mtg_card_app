@@ -312,11 +312,11 @@ Response:"""
 
         # Check cache first if enabled (include filters in cache key)
         if use_cache:
-            cache_key = f"query:{query}:{filters}"
-            cached_result = self.registry.query_cache.get(cache_key)
-            if cached_result is not None:
+            is_cached, cached_result = self.registry.query_cache.get(query, filters)
+            if is_cached:
                 logger.info("Query cache hit")
                 return cached_result
+            cache_key = (query, filters)
         else:
             cache_key = None
 
@@ -330,7 +330,7 @@ Response:"""
         if not search_results:
             result = self._handle_no_results(query, filters)
             if cache_key:
-                self.registry.query_cache.set(cache_key, result)
+                self.registry.query_cache.set(cache_key[0], result, cache_key[1])
             return result
 
         # Fetch full card details for the top results
@@ -346,7 +346,7 @@ Response:"""
         if not cards:
             result = "Cards were found but could not be retrieved. Please try again."
             if cache_key:
-                self.registry.query_cache.set(cache_key, result)
+                self.registry.query_cache.set(cache_key[0], result, cache_key[1])
             return result
 
         # Build rich context for LLM formatting
@@ -378,7 +378,7 @@ Include card names, relevant details, and explain why they match the query."""
 
         # Cache the result
         if cache_key:
-            self.registry.query_cache.set(cache_key, result)
+            self.registry.query_cache.set(cache_key[0], result, cache_key[1])
 
         return result
 
@@ -420,15 +420,16 @@ Include card names, relevant details, and explain why they match the query."""
         """
         logger.info("Finding combo pieces for: %s", card_name)
 
-        # Create cache key
-        cache_key = f"combo_pieces:{card_name}:{n_results}"
-
         # Check cache first if enabled
         if use_cache:
-            cached_result = self.registry.query_cache.get(cache_key)
-            if cached_result is not None:
+            cache_query = f"combo_pieces:{card_name}:{n_results}"
+            is_cached, cached_result = self.registry.query_cache.get(cache_query)
+            if is_cached:
                 logger.info("Query cache hit")
                 return cached_result
+            cache_key = cache_query
+        else:
+            cache_key = None
 
         # Fetch the card to get its details
         card = self.fetch_card(card_name)
@@ -501,7 +502,7 @@ Provide a clear, organized response that helps players understand these combos."
         answer = self.registry.llm_manager.generate(combo_prompt)
 
         # Cache the result if enabled
-        if use_cache:
+        if cache_key:
             self.registry.query_cache.set(cache_key, answer)
 
         return answer

@@ -1,5 +1,7 @@
 """Filter extraction and caching validation script.
 
+MIGRATED: Now uses Interactor instead of deprecated QueryOrchestrator.
+
 Tests:
 1. Filter extraction success rate
 2. Cache effectiveness (hit rate, speedup)
@@ -15,18 +17,16 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from mtg_card_app.core.interactor import Interactor
 from mtg_card_app.core.manager_registry import ManagerRegistry
-from mtg_card_app.core.orchestrator import QueryOrchestrator
-from mtg_card_app.managers.llm.manager import LLMManager
-from mtg_card_app.managers.llm.services.ollama_service import OllamaLLMService
 
 # Configure logging to show filter extraction
 logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
 )
-orchestrator_logger = logging.getLogger("mtg_card_app.core.orchestrator")
-orchestrator_logger.setLevel(logging.DEBUG)
+interactor_logger = logging.getLogger("mtg_card_app.core.interactor")
+interactor_logger.setLevel(logging.DEBUG)
 
 
 def test_filter_extraction():
@@ -37,8 +37,7 @@ def test_filter_extraction():
     print()
 
     registry = ManagerRegistry.get_instance()
-    llm_manager = LLMManager(service=OllamaLLMService(model="llama3"))
-    orchestrator = QueryOrchestrator(registry=registry, llm_manager=llm_manager)
+    interactor = Interactor(registry=registry)
 
     test_cases = [
         ("Show me powerful blue counterspells", {"colors": "U"}),
@@ -57,7 +56,7 @@ def test_filter_extraction():
         print(f"Expected: {expected}")
 
         # Extract filters (this logs DEBUG info)
-        _ = orchestrator.answer_query(query)
+        _ = interactor.answer_natural_language_query(query)
 
         print()
         successes += 1  # Count based on debug output
@@ -77,8 +76,7 @@ def test_cache_effectiveness():
     print()
 
     registry = ManagerRegistry.get_instance()
-    llm_manager = LLMManager(service=OllamaLLMService(model="llama3"))
-    orchestrator = QueryOrchestrator(registry=registry, llm_manager=llm_manager)
+    interactor = Interactor(registry=registry)
 
     test_query = "Show me powerful blue counterspells"
 
@@ -87,7 +85,7 @@ def test_cache_effectiveness():
     print()
     print("Run 1 (Cold - No Cache):")
     start = time.time()
-    response1 = orchestrator.answer_query(test_query)
+    response1 = interactor.answer_natural_language_query(test_query)
     time1 = time.time() - start
     print(f"  Time: {time1:.2f}s")
     print(f"  Response length: {len(response1)} chars")
@@ -96,7 +94,7 @@ def test_cache_effectiveness():
     # Second run (should hit cache if implemented)
     print("Run 2 (Warm - Should hit cache if enabled):")
     start = time.time()
-    response2 = orchestrator.answer_query(test_query)
+    response2 = interactor.answer_natural_language_query(test_query)
     time2 = time.time() - start
     print(f"  Time: {time2:.2f}s")
     print(f"  Response length: {len(response2)} chars")
@@ -106,7 +104,7 @@ def test_cache_effectiveness():
     # Third run
     print("Run 3 (Warm):")
     start = time.time()
-    response3 = orchestrator.answer_query(test_query)
+    response3 = interactor.answer_natural_language_query(test_query)
     time3 = time.time() - start
     print(f"  Time: {time3:.2f}s")
     print(f"  Response length: {len(response3)} chars")
@@ -142,8 +140,7 @@ def test_filter_quality():
     print()
 
     registry = ManagerRegistry.get_instance()
-    llm_manager = LLMManager(service=OllamaLLMService(model="llama3"))
-    orchestrator = QueryOrchestrator(registry=registry, llm_manager=llm_manager)
+    interactor = Interactor(registry=registry)
 
     # Test CMC filtering
     query = "Find removal spells under 2 mana"
@@ -151,7 +148,7 @@ def test_filter_quality():
     print("Expected: Should filter to CMC <= 1")
     print()
 
-    response = orchestrator.answer_query(query)
+    response = interactor.answer_natural_language_query(query)
     print("Response preview:")
     print(response[:400])
     print()
@@ -162,7 +159,7 @@ def test_filter_quality():
     print("Expected: Should filter to blue cards")
     print()
 
-    response2 = orchestrator.answer_query(query2)
+    response2 = interactor.answer_natural_language_query(query2)
     has_counterspell = "Counterspell" in response2
     print(f"Found 'Counterspell': {has_counterspell}")
     print()

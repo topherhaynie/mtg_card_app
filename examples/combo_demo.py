@@ -1,5 +1,7 @@
 """Demo script showcasing combo detection capabilities.
 
+MIGRATED: Now uses Interactor instead of deprecated QueryOrchestrator.
+
 Usage:
     python examples/combo_demo.py
 """
@@ -12,7 +14,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from mtg_card_app.core.orchestrator import QueryOrchestrator
+from mtg_card_app.core.interactor import Interactor
+from mtg_card_app.core.manager_registry import ManagerRegistry
 
 # Configure logging
 logging.basicConfig(
@@ -29,8 +32,9 @@ def demo_combo_detection():
     print("=" * 80)
     print()
 
-    # Initialize orchestrator
-    orchestrator = QueryOrchestrator()
+    # Initialize interactor with manager registry
+    registry = ManagerRegistry.get_instance()
+    interactor = Interactor(registry=registry)
 
     # Demo 1: Famous infinite combo - Isochron Scepter + Dramatic Reversal
     print("🔥 DEMO 1: Isochron Scepter Combos")
@@ -38,7 +42,7 @@ def demo_combo_detection():
     print("Finding combos for: Isochron Scepter")
     print()
 
-    response = orchestrator.find_combos("Isochron Scepter", n_results=3)
+    response = interactor.find_combo_pieces("Isochron Scepter", n_results=3)
     print(response)
     print()
     print("=" * 80)
@@ -50,7 +54,7 @@ def demo_combo_detection():
     print("Finding combos for: Thassa's Oracle")
     print()
 
-    response = orchestrator.find_combos("Thassa's Oracle", n_results=3)
+    response = interactor.find_combo_pieces("Thassa's Oracle", n_results=3)
     print(response)
     print()
     print("=" * 80)
@@ -62,7 +66,7 @@ def demo_combo_detection():
     print("Finding synergies for: Rhystic Study")
     print()
 
-    response = orchestrator.find_combos("Rhystic Study", n_results=3)
+    response = interactor.find_combo_pieces("Rhystic Study", n_results=3)
     print(response)
     print()
     print("=" * 80)
@@ -74,7 +78,7 @@ def demo_combo_detection():
     print("Finding synergies for: Counterspell")
     print()
 
-    response = orchestrator.find_combos("Counterspell", n_results=3)
+    response = interactor.find_combo_pieces("Counterspell", n_results=3)
     print(response)
     print()
     print("=" * 80)

@@ -139,7 +139,7 @@ class ManagerRegistry:
     def llm_manager(self) -> LLMManager:
         """Get the LLM manager."""
         if self._llm_manager is None:
-            self._llm_manager = LLMManager(llm_service=self._llm_service)
+            self._llm_manager = LLMManager(service=self._llm_service)
             logger.debug("Initialized LLMManager")
         return self._llm_manager
 
