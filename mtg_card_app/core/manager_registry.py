@@ -21,6 +21,38 @@ logger = logging.getLogger(__name__)
 
 
 class ManagerRegistry:
+    _mcp_manager = None
+
+    @property
+    def mcp_manager(self):
+        """Get the MCP manager (MCP protocol server)."""
+        if self._mcp_manager is None:
+            from mtg_card_app.interfaces.mcp.manager import MCPManager
+            from mtg_card_app.interfaces.mcp.services.stdio_service import StdioMCPService
+
+            service = StdioMCPService()
+            interactor = self.interactor
+            self._mcp_manager = MCPManager(service=service, interactor=interactor)
+            logger.debug("Initialized MCPManager")
+        return self._mcp_manager
+
+    _interactor = None
+
+    @property
+    def interactor(self):
+        """Get the core Interactor (single source of truth for business logic)."""
+        if self._interactor is None:
+            from mtg_card_app.core.interactor import Interactor
+
+            self._interactor = Interactor(
+                card_data_manager=self.card_data_manager,
+                rag_manager=self.rag_manager,
+                llm_manager=self.llm_manager,
+                db_manager=self.db_manager,
+                query_cache=self.query_cache,
+            )
+        return self._interactor
+
     """Central registry for all managers in the application.
 
     This class implements the Service Locator pattern, providing a single

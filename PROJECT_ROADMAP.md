@@ -1,7 +1,7 @@
 # MTG Card App - Complete Project Roadmap
 
-**Updated:** October 20, 2025  
-**Current Status:** Phase 3 Complete ✅ | Phase 4 Ready to Start 🎯
+**Updated:** October 21, 2025  
+**Current Status:** Phase 4 In Progress 🚧 | All unit tests passing ✅
 
 ---
 
@@ -18,7 +18,7 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 | 1 | Data Layer | ✅ Complete | Card/Combo entities, Scryfall API integration |
 | 2 | RAG Integration | ✅ Complete | Embeddings, vector store, semantic search |
 | 3 | LLM Integration | ✅ Complete | Natural language processing, combo analysis |
-| 4 | MCP Interface | 🎯 Next | Model Context Protocol server |
+| 4 | MCP Interface | 🚧 In Progress | Model Context Protocol server |
 | 5 | Deck Builder | ⏳ Future | AI-powered deck construction |
 | 6 | User Interfaces | ⏳ Future | CLI, TUI, and App interfaces |
 | 7 | Distribution & Installation | ⏳ Future | Multi-platform install: Docker, native, pip |
@@ -134,17 +134,38 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 
 ---
 
-## 🎯 Phase 4: MCP Interface (NEXT)
+## 🚧 Phase 4: MCP Interface (In Progress)
 
 **Goal:** Build Model Context Protocol server for AI assistant integration
+
+### Progress so far
+- Protocol layer scaffolded and wired to the business logic:
+  - `MCPManager` orchestrates request dispatch to `Interactor`.
+  - Service abstraction `MCPService` with stdio implementation `StdioMCPService`.
+  - Entry point `interfaces/mcp/__main__.py` runs the stdio server loop via `ManagerRegistry`.
+- Core tools implemented in dispatch (backed by Interactor):
+  - `query_cards` → `Interactor.answer_natural_language_query`
+  - `find_combo_pieces` → `Interactor.find_combo_pieces`
+  - `search_cards` → `Interactor.search_cards`
+- Dependency injection cleanup completed:
+  - `Interactor` refactored to require explicit dependencies; no registry lookups.
+  - `ManagerRegistry` is the sole wiring hub; circular imports eliminated.
+- Tests updated and expanded:
+  - Unit tests for MCP manager + stdio service.
+  - All unit tests pass across the repo (60 passed on Oct 21, 2025).
+
+### What’s working now
+- Basic stdio-based MCP loop that reads a single-line JSON request and returns a JSON response.
+- Tool dispatch to Interactor with real functionality and coverage by tests.
+- Clean architecture preserved (thin interface layer, business logic in Interactor).
 
 ### Planned Features
 
 #### 4.1: MCP Server Foundation
-- Implement MCP protocol specification
+- Implement full MCP protocol specification (handshake, capabilities, JSON-RPC framing)
 - Server lifecycle management
-- Connection handling (stdio transport)
-- Error handling and logging
+- Connection handling (stdio transport) [basic loop implemented]
+- Structured error handling and logging
 
 #### 4.2: Tool Registration
 **Core Tools:**
@@ -165,6 +186,22 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 - `compare_cards` - Side-by-side comparison
 - `suggest_alternatives` - Budget/power level alternatives
 
+### Next steps (Phase 4)
+1. Adopt the official MCP Python library and protocol framing:
+  - Handshake/capabilities, JSON-RPC over stdio, tool registration metadata.
+  - Keep `MCPManager` as the thin adapter to Interactor.
+2. Define JSON Schemas for tool inputs/outputs and add validation.
+3. Add session/conversation context in the MCP layer (history, follow-ups, state).
+4. Improve error contract: structured error objects, error codes, and user-facing messages.
+5. Implement advanced tools: `explain_card`, `compare_cards`, `suggest_alternatives`.
+6. Observability: configurable logging, request IDs, timing, and debug toggles.
+7. Claude Desktop integration:
+  - Add setup docs and example config to register the server.
+  - Run smoke tests and record example transcripts.
+8. E2E tests for MCP:
+  - Golden-path JSON-RPC sessions per tool, error-path cases, and schema checks.
+9. Performance sanity checks and small load test for tool calls (<100ms target where feasible).
+
 #### 4.3: Conversation Context
 - Session management
 - Query history tracking
@@ -178,12 +215,13 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 - Example conversations
 
 ### Success Criteria
-- [ ] MCP server starts and accepts connections
-- [ ] All core tools registered and working
+- [ ] MCP server starts and accepts connections (per official spec)
+- [ ] All core tools registered and working (with JSON Schemas)
 - [ ] Claude Desktop can call tools successfully
 - [ ] Conversation context maintains state
 - [ ] Error handling provides helpful feedback
 - [ ] Documentation for setup and usage
+- [x] Basic stdio loop present with working dispatch (tests passing)
 
 ### Technical Requirements
 - Follow MCP spec: https://modelcontextprotocol.io/

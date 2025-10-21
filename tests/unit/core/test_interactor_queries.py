@@ -10,7 +10,13 @@ from mtg_card_app.core.manager_registry import ManagerRegistry
 def interactor():
     """Fixture providing Interactor with full manager registry."""
     registry = ManagerRegistry.get_instance()
-    return Interactor(registry=registry)
+    return Interactor(
+        card_data_manager=registry.card_data_manager,
+        rag_manager=registry.rag_manager,
+        llm_manager=registry.llm_manager,
+        db_manager=registry.db_manager,
+        query_cache=registry.query_cache,
+    )
 
 
 class TestInteractor:

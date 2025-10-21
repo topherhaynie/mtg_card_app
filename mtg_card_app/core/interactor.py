@@ -4,7 +4,6 @@ import json
 import logging
 from typing import Any
 
-from mtg_card_app.core.manager_registry import ManagerRegistry
 from mtg_card_app.domain.entities import Card, Combo
 
 logger = logging.getLogger(__name__)
@@ -13,19 +12,35 @@ logger = logging.getLogger(__name__)
 class Interactor:
     """Main application interactor.
 
-    This class orchestrates high-level workflows by coordinating
-    between different managers. It implements use cases and business logic.
+    Orchestrates high-level workflows by coordinating between managers.
+    All dependencies must be passed explicitly.
     """
 
-    def __init__(self, registry: ManagerRegistry | None = None):
-        """Initialize the interactor.
+    def __init__(
+        self,
+        card_data_manager,
+        rag_manager,
+        llm_manager,
+        db_manager=None,
+        query_cache=None,
+        # Add other managers/services as needed
+    ):
+        """Initialize the interactor with all dependencies explicitly.
 
         Args:
-            registry: Optional manager registry (creates one if not provided)
+            card_data_manager: CardDataManager instance
+            rag_manager: RAGManager instance
+            llm_manager: LLMManager instance
+            db_manager: DatabaseManager instance (optional)
+            query_cache: QueryCache instance (optional)
 
         """
-        self.registry = registry or ManagerRegistry.get_instance()
-        logger.info("Initialized Interactor")
+        self.card_data_manager = card_data_manager
+        self.rag_manager = rag_manager
+        self.llm_manager = llm_manager
+        self.db_manager = db_manager
+        self.query_cache = query_cache
+        logger.info("Initialized Interactor with explicit dependencies")
 
     # ===== Card Operations =====
 
@@ -40,7 +55,7 @@ class Interactor:
 
         """
         logger.info(f"Fetching card: {name}")
-        return self.registry.card_data_manager.get_card(name)
+        return self.card_data_manager.get_card(name)
 
     def search_cards(self, query: str, use_scryfall: bool = False) -> list[Card]:
         """Search for cards.
@@ -54,7 +69,7 @@ class Interactor:
 
         """
         logger.info(f"Searching cards: {query} (scryfall={use_scryfall})")
-        return self.registry.card_data_manager.search_cards(
+        return self.card_data_manager.search_cards(
             query,
             use_local=True,
             use_scryfall=use_scryfall,
@@ -71,7 +86,7 @@ class Interactor:
 
         """
         logger.info(f"Importing {len(card_names)} cards")
-        return self.registry.card_data_manager.bulk_import_cards(card_names)
+        return self.card_data_manager.bulk_import_cards(card_names)
 
     def get_budget_cards(self, max_price: float) -> list[Card]:
         """Get cards under a certain price.
@@ -84,7 +99,7 @@ class Interactor:
 
         """
         logger.info(f"Finding budget cards under ${max_price}")
-        return self.registry.card_data_manager.get_budget_cards(max_price)
+        return self.card_data_manager.get_budget_cards(max_price)
 
     # ===== Combo Operations =====
 
@@ -138,9 +153,8 @@ class Interactor:
         combo.colors_required = sorted(list(all_colors))
 
         # Store combo
-        combo = self.registry.db_manager.combo_service.create(combo)
+        combo = self.db_manager.combo_service.create(combo)
         logger.info(f"Created combo: {combo}")
-
         return combo
 
     def find_combos_by_card(self, card_name: str) -> list[Combo]:
@@ -158,7 +172,7 @@ class Interactor:
             logger.warning(f"Card '{card_name}' not found")
             return []
 
-        return self.registry.db_manager.combo_service.get_by_card_id(card.id)
+        return self.db_manager.combo_service.get_by_card_id(card.id)
 
     def get_budget_combos(self, max_price: float) -> list[Combo]:
         """Get combos under a certain total price.
@@ -171,7 +185,7 @@ class Interactor:
 
         """
         logger.info(f"Finding budget combos under ${max_price}")
-        return self.registry.db_manager.combo_service.get_budget_combos(max_price)
+        return self.db_manager.combo_service.get_budget_combos(max_price)
 
     # ===== System Operations =====
 
@@ -182,7 +196,12 @@ class Interactor:
             Dictionary with system stats
 
         """
-        return self.registry.get_all_stats()
+        return {
+            "card_data": self.card_data_manager.get_stats() if hasattr(self.card_data_manager, "get_stats") else None,
+            "rag": self.rag_manager.get_stats() if hasattr(self.rag_manager, "get_stats") else None,
+            "llm": self.llm_manager.get_stats() if hasattr(self.llm_manager, "get_stats") else None,
+            "db": self.db_manager.get_stats() if self.db_manager and hasattr(self.db_manager, "get_stats") else None,
+        }
 
     # ===== Query Operations =====
 
@@ -234,7 +253,7 @@ Query: "{user_query}"
 Response:"""
 
         try:
-            response = self.registry.llm_manager.generate(extraction_prompt)
+            response = self.llm_manager.generate(extraction_prompt)
             # Try to parse JSON from response - handle various formats
             clean_response = response.strip()
 
@@ -312,7 +331,7 @@ Response:"""
 
         # Check cache first if enabled (include filters in cache key)
         if use_cache:
-            is_cached, cached_result = self.registry.query_cache.get(query, filters)
+            is_cached, cached_result = self.query_cache.get(query, filters) if self.query_cache else (False, None)
             if is_cached:
                 logger.info("Query cache hit")
                 return cached_result
@@ -321,7 +340,7 @@ Response:"""
             cache_key = None
 
         # Use RAG semantic search to find relevant cards with filters
-        search_results = self.registry.rag_manager.search_similar(
+        search_results = self.rag_manager.search_similar(
             query=query,
             n_results=5,
             filters=filters if filters else None,
@@ -330,13 +349,14 @@ Response:"""
         if not search_results:
             result = self._handle_no_results(query, filters)
             if cache_key:
-                self.registry.query_cache.set(cache_key[0], result, cache_key[1])
+                if self.query_cache:
+                    self.query_cache.set(cache_key[0], result, cache_key[1])
             return result
 
         # Fetch full card details for the top results
         cards = []
         for card_id, score, _metadata in search_results:
-            card = self.registry.card_data_manager.get_card_by_id(
+            card = self.card_data_manager.get_card_by_id(
                 card_id,
                 fetch_if_missing=False,
             )
@@ -346,7 +366,8 @@ Response:"""
         if not cards:
             result = "Cards were found but could not be retrieved. Please try again."
             if cache_key:
-                self.registry.query_cache.set(cache_key[0], result, cache_key[1])
+                if self.query_cache:
+                    self.query_cache.set(cache_key[0], result, cache_key[1])
             return result
 
         # Build rich context for LLM formatting
@@ -374,12 +395,11 @@ Relevant MTG cards found (in order of relevance):
 Please provide a helpful, natural response answering the user's query using these cards.
 Include card names, relevant details, and explain why they match the query."""
 
-        result = self.registry.llm_manager.generate(format_prompt)
-
+        result = self.llm_manager.generate(format_prompt)
         # Cache the result
         if cache_key:
-            self.registry.query_cache.set(cache_key[0], result, cache_key[1])
-
+            if self.query_cache:
+                self.query_cache.set(cache_key[0], result, cache_key[1])
         return result
 
     def _handle_no_results(self, user_query: str, filters: dict[str, Any]) -> str:
@@ -423,7 +443,7 @@ Include card names, relevant details, and explain why they match the query."""
         # Check cache first if enabled
         if use_cache:
             cache_query = f"combo_pieces:{card_name}:{n_results}"
-            is_cached, cached_result = self.registry.query_cache.get(cache_query)
+            is_cached, cached_result = self.query_cache.get(cache_query) if self.query_cache else (False, None)
             if is_cached:
                 logger.info("Query cache hit")
                 return cached_result
@@ -441,7 +461,7 @@ Include card names, relevant details, and explain why they match the query."""
         logger.debug("Combo query: %s", combo_query)
 
         # Find synergistic cards using semantic search
-        search_results = self.registry.rag_manager.search_similar(
+        search_results = self.rag_manager.search_similar(
             query=combo_query,
             n_results=n_results + 1,  # +1 to account for the base card itself
         )
@@ -451,7 +471,7 @@ Include card names, relevant details, and explain why they match the query."""
         for card_id, score, _metadata in search_results:
             if card_id == card.id:
                 continue
-            combo_card = self.registry.card_data_manager.get_card_by_id(
+            combo_card = self.card_data_manager.get_card_by_id(
                 card_id,
                 fetch_if_missing=False,
             )
@@ -499,12 +519,11 @@ For each combo piece, explain:
 
 Provide a clear, organized response that helps players understand these combos."""
 
-        answer = self.registry.llm_manager.generate(combo_prompt)
-
+        answer = self.llm_manager.generate(combo_prompt)
         # Cache the result if enabled
         if cache_key:
-            self.registry.query_cache.set(cache_key, answer)
-
+            if self.query_cache:
+                self.query_cache.set(cache_key, answer)
         return answer
 
     def _build_combo_query(self, card: Card) -> str:
