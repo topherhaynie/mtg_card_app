@@ -1,0 +1,10 @@
+{
+  "cold_time_ms": 21764.925003051758,
+  "warm_time_ms": 19918.63226890564,
+  "sustained_avg_ms": 20581.478357315063,
+  "speedup": 1.092691742546415,
+  "sustained_speedup": 1.057500565566325,
+  "cache_hit_rate": 0.8891257995735607,
+  "cache_hits": 1251,
+  "cache_misses": 156
+}

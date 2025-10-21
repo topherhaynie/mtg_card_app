@@ -7,37 +7,40 @@ from mtg_card_app.domain.entities import Card
 from mtg_card_app.managers.card_data.services import (
     CardDataService,
 )
-from mtg_card_app.managers.db.services import CardService
+
+# Support both JSON and SQLite services
+from mtg_card_app.managers.db.services.base import BaseService
 
 logger = logging.getLogger(__name__)
 
 
 class CardDataManager:
-    def get_all_cards(self, limit: int = 1000) -> list[Card]:
-        """Return all cards from local storage (for orchestrator workflows)."""
-        return self.card_service.get_all(limit=limit)
-
     """Manages card data fetching and caching.
 
     This manager coordinates between a card data service and local storage,
     implementing a caching strategy to minimize API calls.
     The card data service can be any implementation (Scryfall, MTGJSON, etc.).
+    Storage can be JSON (CardService) or SQLite (CardSqliteService).
     """
 
     def __init__(
         self,
-        card_service: CardService,
+        card_service: BaseService[Card],
         card_data_service: CardDataService,
     ):
         """Initialize the card data manager.
 
         Args:
-            card_service: Service for local card storage
+            card_service: Service for local card storage (JSON or SQLite)
             card_data_service: Card data service implementation (required)
 
         """
         self.card_service = card_service
         self.card_data_service = card_data_service
+
+    def get_all_cards(self, limit: int = 1000) -> list[Card]:
+        """Return all cards from local storage (for orchestrator workflows)."""
+        return self.card_service.get_all(limit=limit)
 
     def get_card(self, name: str, fetch_if_missing: bool = True) -> Card | None:
         """Get a card by name, fetching from card data service if not in local storage.

@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from mtg_card_app.domain.entities.deck import Deck
+from mtg_card_app.utils.suggestion_cache import get_suggestion_cache
 
 # ManagerRegistry import moved below for test monkeypatching compatibility
 
@@ -182,12 +183,22 @@ class DeckBuilderManager:
             query_parts.append(f"under ${budget}")
         query = " ".join(query_parts)
 
-        decklist = set(deck.cards)
-        try:
-            results = rag.search_similar(query=query, n_results=n_results, context_cards=list(decklist))
-        except Exception:
-            logging.exception("RAG search_similar failed")
-            return suggestions
+        # Get cache instance
+        cache = get_suggestion_cache()
+
+        # Check cache for RAG results
+        cached_rag = cache.get_rag_results(query, n_results)
+        if cached_rag:
+            results = cached_rag
+            logging.info("Using cached RAG results")
+        else:
+            try:
+                results = rag.search_similar(query=query, n_results=n_results)
+                # Cache the results
+                cache.cache_rag_results(query, n_results, results)
+            except Exception:
+                logging.exception("RAG search_similar failed")
+                return suggestions
 
         deck_colors = set(deck.metadata.get("colors", [])) if deck.metadata else set()
 
@@ -225,7 +236,7 @@ class DeckBuilderManager:
                     "synergy": synergy_score,
                     "weaknesses": weakness_flags,
                     "reason": f"Matches theme '{theme}'" if theme else "Relevant to deck",
-                }
+                },
             )
 
         # Add suggested card names to candidates for cross-combo detection
@@ -257,7 +268,16 @@ class DeckBuilderManager:
                         combo_query["colors"] = list(deck_colors)
                     if combo_types_filter:
                         combo_query["combo_types"] = combo_types_filter
-                    combos = interactor.db_manager.combo_service.search(combo_query)
+
+                    # Check cache for combo results
+                    card_pair = (card.name, other_card.name)
+                    cached_combos = cache.get_combo_results(card_pair)
+                    if cached_combos:
+                        combos = cached_combos
+                    else:
+                        combos = interactor.db_manager.combo_service.search(combo_query)
+                        # Cache the results
+                        cache.cache_combo_results(card_pair, combos)
                 except Exception as exc:
                     logging.warning(f"Combo search failed for {card.name} + {other_card.name}: {exc}")
 
@@ -385,7 +405,7 @@ Provide a brief (2-3 sentences) explanation of:
                     "weaknesses": obj["weaknesses"],
                     "reason": obj["reason"],
                     "combos": combo_dicts,
-                }
+                },
             )
 
         # Sort by synergy, score, combo count

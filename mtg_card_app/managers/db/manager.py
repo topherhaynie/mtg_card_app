@@ -1,9 +1,9 @@
 """Database manager for coordinating database services."""
 
 from pathlib import Path
-from typing import Optional
 
-from mtg_card_app.managers.db.services import CardService, ComboService
+from mtg_card_app.managers.db.services import ComboService
+from mtg_card_app.managers.db.services.card_sqlite_service import CardSqliteService
 
 
 class DatabaseManager:
@@ -24,9 +24,11 @@ class DatabaseManager:
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize services
-        self.card_service = CardService(
-            storage_path=str(self.data_dir / "cards.json"),
+        # Use SQLite for cards (much faster for 30k+ cards)
+        self.card_service = CardSqliteService(
+            db_path=str(self.data_dir / "cards.db"),
         )
+        # Combos still use JSON (smaller dataset)
         self.combo_service = ComboService(
             storage_path=str(self.data_dir / "combos.json"),
         )
@@ -51,7 +53,7 @@ class DatabaseManager:
         self.card_service._write_data({"cards": {}})
         self.combo_service._write_data({"combos": {}})
 
-    def export_data(self, export_dir: Optional[str] = None) -> dict:
+    def export_data(self, export_dir: str | None = None) -> dict:
         """Export all data to a specified directory.
 
         Args:

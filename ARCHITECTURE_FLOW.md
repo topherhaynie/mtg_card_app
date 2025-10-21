@@ -51,34 +51,35 @@
 │                     SERVICE LAYER                            │
 │             (managers/db/services/)                          │
 │                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ CardService  │  │ ComboService │  │ BaseService  │      │
-│  │              │  │              │  │  (Abstract)  │      │
-│  │ CRUD for     │  │ CRUD for     │  │              │      │
-│  │ Card entities│  │ Combo entities│  │ Interface    │      │
-│  │              │  │              │  │ for all      │      │
-│  │ • create()   │  │ • create()   │  │ services     │      │
-│  │ • get_by_id()│  │ • search()   │  │              │      │
-│  │ • search()   │  │ • get_budget │  │              │      │
-│  │ • update()   │  │ • get_infin. │  │              │      │
-│  └──────┬───────┘  └──────┬───────┘  └──────────────┘      │
-└─────────┼──────────────────┼──────────────────────────────────┘
-          │                  │
-          ▼                  ▼
+│  ┌──────────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │ CardSqliteService│  │ ComboService │  │ BaseService  │  │
+│  │                  │  │              │  │  (Abstract)  │  │
+│  │ CRUD for Cards   │  │ CRUD for     │  │              │  │
+│  │ (SQLite)         │  │ Combo entities│  │ Interface    │  │
+│  │                  │  │ (JSON)       │  │ for all      │  │
+│  │ • create()       │  │ • create()   │  │ services     │  │
+│  │ • get_by_id()    │  │ • search()   │  │              │  │
+│  │ • get_by_name()  │  │ • get_budget │  │              │  │
+│  │ • search()       │  │ • get_infin. │  │              │  │
+│  │ • bulk_create()  │  │              │  │              │  │
+│  └──────┬───────────┘  └──────┬───────┘  └──────────────┘  │
+└─────────┼──────────────────────┼──────────────────────────────┘
+          │                      │
+          ▼                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    STORAGE LAYER                             │
-│                   (JSON Files - Free)                        │
 │                                                               │
 │  ┌────────────────┐           ┌────────────────┐           │
-│  │  cards.json    │           │  combos.json   │           │
+│  │  cards.db      │           │  combos.json   │           │
+│  │  (SQLite)      │           │  (JSON)        │           │
 │  │                │           │                │           │
-│  │ {              │           │ {              │           │
-│  │   "cards": {   │           │   "combos": {  │           │
-│  │     "id": {    │           │     "id": {    │           │
-│  │       ...      │           │       ...      │           │
-│  │     }          │           │     }          │           │
-│  │   }            │           │   }            │           │
-│  │ }              │           │ }              │           │
+│  │ • 35k+ cards   │           │ {              │           │
+│  │ • 6 indexes    │           │   "combos": {  │           │
+│  │ • <1ms lookups │           │     "id": {    │           │
+│  │ • Case-        │           │       ...      │           │
+│  │   insensitive  │           │     }          │           │
+│  │   search       │           │   }            │           │
+│  │                │           │ }              │           │
 │  └────────────────┘           └────────────────┘           │
 └─────────────────────────────────────────────────────────────┘
           ▲                              ▲

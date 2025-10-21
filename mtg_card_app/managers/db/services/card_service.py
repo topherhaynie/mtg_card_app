@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mtg_card_app.domain.entities import Card
 from mtg_card_app.managers.db.services.base import BaseService
@@ -27,20 +27,42 @@ class CardService(BaseService[Card]):
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_storage_exists()
 
+        # In-memory cache for card lookups to avoid repeated file reads
+        self._cache: dict[str, Any] | None = None
+        self._cache_timestamp: float | None = None
+
     def _ensure_storage_exists(self):
         """Ensure the storage file exists."""
         if not self.storage_path.exists():
             self._write_data({"cards": {}})
 
-    def _read_data(self) -> Dict[str, Any]:
-        """Read data from JSON storage."""
-        with open(self.storage_path) as f:
-            return json.load(f)
+    def _read_data(self) -> dict[str, Any]:
+        """Read data from JSON storage with caching."""
+        # Check if cache is valid
+        if self._cache is not None:
+            # Check if file has been modified
+            current_mtime = self.storage_path.stat().st_mtime
+            if self._cache_timestamp == current_mtime:
+                return self._cache
 
-    def _write_data(self, data: Dict[str, Any]):
+        # Cache miss or invalidated - read from file
+        with open(self.storage_path) as f:
+            data = json.load(f)
+
+        # Update cache
+        self._cache = data
+        self._cache_timestamp = self.storage_path.stat().st_mtime
+
+        return data
+
+    def _write_data(self, data: dict[str, Any]):
         """Write data to JSON storage."""
         with open(self.storage_path, "w") as f:
             json.dump(data, f, indent=2, default=str)
+
+        # Invalidate cache after write
+        self._cache = None
+        self._cache_timestamp = None
 
     def create(self, entity: Card) -> Card:
         """Create a new card in storage."""
@@ -56,7 +78,7 @@ class CardService(BaseService[Card]):
 
         return entity
 
-    def get_by_id(self, entity_id: str) -> Optional[Card]:
+    def get_by_id(self, entity_id: str) -> Card | None:
         """Get a card by its Scryfall ID."""
         data = self._read_data()
         card_data = data["cards"].get(entity_id)
@@ -67,7 +89,7 @@ class CardService(BaseService[Card]):
         # Reconstruct Card from stored data
         return Card(**card_data)
 
-    def get_by_name(self, name: str) -> Optional[Card]:
+    def get_by_name(self, name: str) -> Card | None:
         """Get a card by its name."""
         data = self._read_data()
 
@@ -77,7 +99,7 @@ class CardService(BaseService[Card]):
 
         return None
 
-    def get_all(self, limit: Optional[int] = None, offset: int = 0) -> List[Card]:
+    def get_all(self, limit: int | None = None, offset: int = 0) -> list[Card]:
         """Get all cards with pagination."""
         data = self._read_data()
         cards = [Card(**card_data) for card_data in data["cards"].values()]
@@ -115,7 +137,7 @@ class CardService(BaseService[Card]):
 
         return False
 
-    def search(self, query: Dict[str, Any]) -> List[Card]:
+    def search(self, query: dict[str, Any]) -> list[Card]:
         """Search for cards matching criteria.
 
         Args:
@@ -189,7 +211,7 @@ class CardService(BaseService[Card]):
         data = self._read_data()
         return len(data["cards"])
 
-    def bulk_create(self, cards: List[Card]) -> int:
+    def bulk_create(self, cards: list[Card]) -> int:
         """Bulk insert multiple cards.
 
         Args:
@@ -211,7 +233,7 @@ class CardService(BaseService[Card]):
         self._write_data(data)
         return count
 
-    def get_by_color_identity(self, colors: List[str]) -> List[Card]:
+    def get_by_color_identity(self, colors: list[str]) -> list[Card]:
         """Get cards with specific color identity."""
         data = self._read_data()
         results = []
@@ -224,6 +246,6 @@ class CardService(BaseService[Card]):
 
         return results
 
-    def get_budget_cards(self, max_price: float) -> List[Card]:
+    def get_budget_cards(self, max_price: float) -> list[Card]:
         """Get cards under a certain price."""
         return self.search({"max_price": max_price})

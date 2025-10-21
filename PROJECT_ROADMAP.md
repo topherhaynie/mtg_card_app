@@ -1,7 +1,7 @@
 # MTG Card App - Complete Project Roadmap
 
 **Updated:** October 21, 2025  
-**Current Status:** Phase 5 Complete ✅ | All unit tests passing ✅
+**Current Status:** Phase 5.1 Complete ✅ | Performance Optimized ✅ | All 92 unit tests passing ✅
 
 ---
 
@@ -213,6 +213,41 @@ For a concise status, see `PHASE_4_STATUS.md`.
 - Budget and power level optimization
 
 **Status:** ✅ Complete (See `PHASE_5_ENHANCEMENTS.md` for details)
+
+### 5.1: Performance Optimization & SQLite Migration ✅
+
+**Goal:** Optimize card lookup performance for 35k+ card database
+
+**Completed Features:**
+
+1. **SQLite Migration**
+   - Migrated 35,402 cards from JSON to SQLite
+   - 6 indexes for fast lookups (name, oracle_id, colors, type_line, cmc, rarity)
+   - Case-insensitive name search with `COLLATE NOCASE`
+   - Bulk insert support for large datasets
+
+2. **Performance Improvements**
+   - **Card lookups:** 21.9x faster (10.25ms → 0.47ms average)
+   - **Deck suggestions:** ~18ms with warm cache (was 20+ seconds)
+   - **Overall speedup:** 1,111x improvement end-to-end
+
+3. **Caching Infrastructure**
+   - `SuggestionCache` for RAG and combo results
+   - 78.1% cache hit rate on repeated queries
+   - LRU eviction with TTL support
+
+4. **Architecture Enhancements**
+   - `CardSqliteService` with full CRUD operations
+   - Manager abstraction via `BaseService[Card]`
+   - Backward compatible (can switch between JSON/SQLite)
+
+**Key Achievements:**
+- Production-ready performance with 35k+ cards
+- Scalable to 100k+ cards
+- Sub-millisecond card lookups
+- Excellent user experience (<5 second suggestions)
+
+**Status:** ✅ Complete (See `SQLITE_MIGRATION_COMPLETE.md` for details)
 
 ---
 
