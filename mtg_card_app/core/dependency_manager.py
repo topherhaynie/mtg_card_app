@@ -13,12 +13,17 @@ from mtg_card_app.managers.card_data.services import (
     CardDataService,
     ScryfallCardDataService,
 )
+from mtg_card_app.managers.llm.services import (
+    LLMService,
+    OllamaLLMService,
+)
 from mtg_card_app.managers.rag.services import (
     ChromaVectorStoreService,
     EmbeddingService,
     SentenceTransformerEmbeddingService,
     VectorStoreService,
 )
+from mtg_card_app.utils.query_cache import QueryCache
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +55,8 @@ class DependencyManager:
         card_data_service: CardDataService | None = None,
         embedding_service: EmbeddingService | None = None,
         vector_store_service: VectorStoreService | None = None,
+        llm_service: LLMService | None = None,
+        query_cache: QueryCache | None = None,
     ) -> None:
         """Initialize the dependency manager.
 
@@ -58,6 +65,8 @@ class DependencyManager:
             card_data_service: Optional custom card data service
             embedding_service: Optional custom embedding service
             vector_store_service: Optional custom vector store service
+            llm_service: Optional custom LLM service
+            query_cache: Optional custom query cache
 
         """
         self.data_dir = data_dir
@@ -67,6 +76,8 @@ class DependencyManager:
         self._card_data_service = card_data_service
         self._embedding_service = embedding_service
         self._vector_store_service = vector_store_service
+        self._llm_service = llm_service
+        self._query_cache = query_cache
 
         logger.info(
             "Initialized DependencyManager with data_dir: %s",
@@ -112,6 +123,30 @@ class DependencyManager:
             )
         return self._vector_store_service
 
+    def get_llm_service(self) -> LLMService:
+        """Get or create the LLM service.
+
+        Returns:
+            LLMService instance
+
+        """
+        if self._llm_service is None:
+            logger.debug("Creating default OllamaLLMService")
+            self._llm_service = OllamaLLMService(model="llama3")
+        return self._llm_service
+
+    def get_query_cache(self) -> QueryCache:
+        """Get or create the query cache.
+
+        Returns:
+            QueryCache instance
+
+        """
+        if self._query_cache is None:
+            logger.debug("Creating default QueryCache")
+            self._query_cache = QueryCache(maxsize=128)
+        return self._query_cache
+
     def set_card_data_service(self, service: CardDataService) -> None:
         """Set a custom card data service.
 
@@ -151,6 +186,26 @@ class DependencyManager:
             service.get_service_name(),
         )
 
+    def set_llm_service(self, service: LLMService) -> None:
+        """Set a custom LLM service.
+
+        Args:
+            service: LLMService implementation to use
+
+        """
+        self._llm_service = service
+        logger.debug("Set custom LLM service: %s", service.get_service_name())
+
+    def set_query_cache(self, cache: QueryCache) -> None:
+        """Set a custom query cache.
+
+        Args:
+            cache: QueryCache instance to use
+
+        """
+        self._query_cache = cache
+        logger.debug("Set custom query cache with maxsize: %d", cache.maxsize)
+
     def get_all_services(self) -> dict[str, Any]:
         """Get all initialized services.
 
@@ -165,6 +220,10 @@ class DependencyManager:
             services["embedding"] = self._embedding_service
         if self._vector_store_service is not None:
             services["vector_store"] = self._vector_store_service
+        if self._llm_service is not None:
+            services["llm"] = self._llm_service
+        if self._query_cache is not None:
+            services["query_cache"] = self._query_cache
         return services
 
     def get_stats(self) -> dict[str, Any]:
@@ -203,10 +262,17 @@ class DependencyManager:
             # ChromaDB clients are automatically cleaned up, but we can call
             # any explicit cleanup methods if needed in the future
 
+        # Clear query cache
+        if self._query_cache is not None:
+            logger.debug("Clearing query cache")
+            self._query_cache.clear()
+
         # Clear references
         self._card_data_service = None
         self._embedding_service = None
         self._vector_store_service = None
+        self._llm_service = None
+        self._query_cache = None
         self._services.clear()
 
         logger.info("DependencyManager shutdown complete")

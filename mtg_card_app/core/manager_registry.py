@@ -6,6 +6,8 @@ from typing import Optional
 from mtg_card_app.managers.card_data import CardDataManager
 from mtg_card_app.managers.card_data.services import CardDataService, ScryfallCardDataService
 from mtg_card_app.managers.db.manager import DatabaseManager
+from mtg_card_app.managers.llm.manager import LLMManager
+from mtg_card_app.managers.llm.services import LLMService, OllamaLLMService
 from mtg_card_app.managers.rag import RAGManager
 from mtg_card_app.managers.rag.services import (
     ChromaVectorStoreService,
@@ -13,6 +15,7 @@ from mtg_card_app.managers.rag.services import (
     SentenceTransformerEmbeddingService,
     VectorStoreService,
 )
+from mtg_card_app.utils.query_cache import QueryCache
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +33,11 @@ class ManagerRegistry:
     def __init__(
         self,
         data_dir: str = "data",
-        card_data_service: Optional[CardDataService] = None,
-        embedding_service: Optional[EmbeddingService] = None,
-        vector_store_service: Optional[VectorStoreService] = None,
+        card_data_service: CardDataService | None = None,
+        embedding_service: EmbeddingService | None = None,
+        vector_store_service: VectorStoreService | None = None,
+        llm_service: LLMService | None = None,
+        query_cache: QueryCache | None = None,
     ):
         """Initialize the manager registry.
 
@@ -41,6 +46,8 @@ class ManagerRegistry:
             card_data_service: Optional card data service (uses Scryfall if not provided)
             embedding_service: Optional embedding service (uses SentenceTransformers if not provided)
             vector_store_service: Optional vector store service (uses ChromaDB if not provided)
+            llm_service: Optional LLM service (uses Ollama if not provided)
+            query_cache: Optional query cache (creates new one if not provided)
 
         """
         self.data_dir = data_dir
@@ -52,11 +59,14 @@ class ManagerRegistry:
             data_dir=f"{data_dir}/chroma",
             collection_name="mtg_cards",
         )
+        self._llm_service = llm_service or OllamaLLMService(model="llama3")
+        self._query_cache = query_cache or QueryCache(maxsize=128)
 
         # Core managers (lazy-loaded via properties)
-        self._db_manager: Optional[DatabaseManager] = None
-        self._card_data_manager: Optional[CardDataManager] = None
-        self._rag_manager: Optional[RAGManager] = None
+        self._db_manager: DatabaseManager | None = None
+        self._card_data_manager: CardDataManager | None = None
+        self._rag_manager: RAGManager | None = None
+        self._llm_manager: LLMManager | None = None
 
         logger.info(f"Initialized ManagerRegistry with data_dir: {data_dir}")
 
@@ -125,6 +135,19 @@ class ManagerRegistry:
             logger.debug("Initialized RAGManager")
         return self._rag_manager
 
+    @property
+    def llm_manager(self) -> LLMManager:
+        """Get the LLM manager."""
+        if self._llm_manager is None:
+            self._llm_manager = LLMManager(llm_service=self._llm_service)
+            logger.debug("Initialized LLMManager")
+        return self._llm_manager
+
+    @property
+    def query_cache(self) -> QueryCache:
+        """Get the query cache."""
+        return self._query_cache
+
     def get_all_stats(self) -> dict:
         """Get statistics from all managers.
 
@@ -139,4 +162,6 @@ class ManagerRegistry:
             "rag": self.rag_manager.get_stats(),
             "embedding_service": self.embedding_service.get_stats(),
             "vector_store_service": self.vector_store_service.get_stats(),
+            "llm": self.llm_manager.get_stats(),
+            "query_cache": self.query_cache.get_stats(),
         }
