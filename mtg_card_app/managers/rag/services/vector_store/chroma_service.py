@@ -120,9 +120,27 @@ class ChromaVectorStoreService:
                 ids=[id],
                 include=["embeddings"],
             )
-            if result and result["embeddings"]:
-                return result["embeddings"][0]
-            return None
+            # Check if we got results - ChromaDB returns empty lists if not found
+            if not result or not result.get("ids") or len(result["ids"]) == 0:
+                return None
+            
+            # If we have IDs, check if embeddings were included
+            if "embeddings" not in result:
+                return None
+            
+            embeddings_list = result["embeddings"]
+            # embeddings_list should be a list; check length first to avoid numpy array truthiness issues
+            if embeddings_list is None or len(embeddings_list) == 0:
+                return None
+                
+            embedding = embeddings_list[0]
+            if embedding is None:
+                return None
+            
+            # Convert numpy array to list if needed
+            if hasattr(embedding, "tolist"):
+                return embedding.tolist()
+            return list(embedding)
         except Exception as e:
             logger.error(f"Error retrieving embedding {id}: {e}")
             return None

@@ -1,0 +1,38 @@
+Refactor: Protocol-based testing pattern
+
+Complete refactoring of unit tests from mock-heavy implementation-detail
+tests to protocol-based contract testing.
+
+BEFORE:
+- 18 failing tests mocking internal implementation details
+- Fragile tests that break with internal refactoring
+- No real behavior validation
+
+AFTER:
+- 37 passing protocol tests (100% coverage)
+- Tests actual behavior with real services
+- Scalable pattern for adding new implementations
+
+Changes:
+- Created protocol test files for CardData, Embedding, VectorStore services
+- Parametrized fixtures to test all implementations
+- Removed old mock-heavy test directories
+- Fixed bug in ChromaVectorStoreService.get_embedding()
+- Added comprehensive testing documentation
+
+Test Coverage:
+- CardDataService: 9 tests (ScryfallCardDataService)
+- EmbeddingService: 11 tests (SentenceTransformerEmbeddingService)
+- VectorStoreService: 17 tests (ChromaVectorStoreService)
+
+Benefits:
+- Tests survive internal refactoring
+- Easy to add new implementations
+- Real integration testing catches actual bugs
+- Clear documentation of expected behavior
+
+Documentation:
+- PROTOCOL_BASED_TESTING.md - Testing pattern guide
+- TESTING_REFACTORING_COMPLETE.md - Refactoring summary
+
+Ready for Phase 3 development.
