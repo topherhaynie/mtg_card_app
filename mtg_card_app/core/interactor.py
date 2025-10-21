@@ -10,6 +10,50 @@ logger = logging.getLogger(__name__)
 
 
 class Interactor:
+    # ===== Deck Builder Operations =====
+
+    def build_deck(
+        self,
+        deck_format: str,
+        card_pool: list[str],
+        commander: str = None,
+        constraints: dict = None,
+        metadata: dict = None,
+    ):
+        """Build a deck using the DeckBuilderManager."""
+        from mtg_card_app.core.manager_registry import ManagerRegistry
+
+        deck_builder = ManagerRegistry.get_instance().deck_builder_manager
+        return deck_builder.build_deck(deck_format, card_pool, commander, constraints, metadata)
+
+    def validate_deck(self, deck):
+        """Validate a deck using the DeckBuilderManager."""
+        from mtg_card_app.core.manager_registry import ManagerRegistry
+
+        deck_builder = ManagerRegistry.get_instance().deck_builder_manager
+        return deck_builder.validate_deck(deck)
+
+    def analyze_deck(self, deck):
+        """Analyze a deck using the DeckBuilderManager."""
+        from mtg_card_app.core.manager_registry import ManagerRegistry
+
+        deck_builder = ManagerRegistry.get_instance().deck_builder_manager
+        return deck_builder.analyze_deck(deck)
+
+    def suggest_cards(self, deck, constraints: dict | None = None):
+        """Suggest cards for a deck using the DeckBuilderManager."""
+        from mtg_card_app.core.manager_registry import ManagerRegistry
+
+        deck_builder = ManagerRegistry.get_instance().deck_builder_manager
+        return deck_builder.suggest_cards(deck, constraints)
+
+    def export_deck(self, deck, export_format: str = "text"):
+        """Export a deck to various formats using the DeckBuilderManager."""
+        from mtg_card_app.core.manager_registry import ManagerRegistry
+
+        deck_builder = ManagerRegistry.get_instance().deck_builder_manager
+        return deck_builder.export_deck(deck, export_format)
+
     """Main application interactor.
 
     Orchestrates high-level workflows by coordinating between managers.

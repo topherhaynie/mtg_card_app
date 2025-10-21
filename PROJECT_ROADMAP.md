@@ -1,7 +1,7 @@
 # MTG Card App - Complete Project Roadmap
 
 **Updated:** October 21, 2025  
-**Current Status:** Phase 4 In Progress 🚧 | All unit tests passing ✅
+**Current Status:** Phase 5 Complete ✅ | All unit tests passing ✅
 
 ---
 
@@ -18,8 +18,8 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 | 1 | Data Layer | ✅ Complete | Card/Combo entities, Scryfall API integration |
 | 2 | RAG Integration | ✅ Complete | Embeddings, vector store, semantic search |
 | 3 | LLM Integration | ✅ Complete | Natural language processing, combo analysis |
-| 4 | MCP Interface | 🚧 In Progress | Model Context Protocol server |
-| 5 | Deck Builder | ⏳ Future | AI-powered deck construction |
+| 4 | MCP Interface | ✅ Complete | Model Context Protocol server |
+| 5 | Deck Builder | ✅ Complete | AI-powered deck construction with combo detection |
 | 6 | User Interfaces | ⏳ Future | CLI, TUI, and App interfaces |
 | 7 | Distribution & Installation | ⏳ Future | Multi-platform install: Docker, native, pip |
 
@@ -134,55 +134,85 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 
 ---
 
-## 🚧 Phase 4: MCP Interface (In Progress)
+## ✅ Phase 4: MCP Interface
 
 For a concise status, see `PHASE_4_STATUS.md`.
 
-### Completed in Phase 4 so far
+### Completed Features
 - JSON-RPC stdio transport with MCP-style framing + tests
 - Unified `MCPManager` dispatch (legacy + JSON-RPC) with JSON Schema validation
 - Tools implemented: query_cards, search_cards, find_combo_pieces, explain_card, compare_cards
-- initialize now advertises server version, capabilities, input schemas, and output schemas (e.g., for search_cards)
-- History with timestamps, duration_ms, and request ids (legacy ids generated) + filtering API (tool, since, id, error_only)
+- Deck builder tools: build_deck, validate_deck, analyze_deck, suggest_cards
+- Initialize advertises server version, capabilities, input/output schemas, per-tool descriptions/examples
+- History with timestamps, duration_ms, request ids + filtering API
 - Official MCP adapter and CLI mode switch (`--server classic|official`, default classic)
-- Classic CLI smoke validated (initialize + search_cards); MCP unit tests green (13)
+- Classic CLI smoke validated; MCP unit tests passing
 
-### Remaining for Phase 4 completion
-- Initialize polish: per-tool descriptions/examples; finalize capability fields
-- Optional output validation toggle (enforce outputSchema at runtime)
-- Align legacy error shape with JSON-RPC error objects
-- Observability knobs (log level, history limits)
-- E2E JSON-RPC tests per tool; performance notes
-- Scale-up: import Oracle (unique) cards and vectorize full set
+### Key Achievements
+- Full MCP protocol compliance
+- Rich tool schema documentation
+- Performance tracking and debugging support
+- Dual-mode operation (classic/official)
+- Scale-up ready with Oracle card import
 
-### Backlog / Nice-to-Have
-- Claude Desktop integration guide, config, and smoke test (not required for Phase 4 completion)
-
-### Scale-up steps (pre-Phase 5)
-1) Import oracle_cards bulk from Scryfall to local DB (see `scripts/import_oracle_cards.py`)
-2) Vectorize all cards (see `scripts/vectorize_cards.py`)
-3) Verify RAG queries and performance at full scale
-
-**ETA to finish Phase 4:** ~1–2 short work sessions
+**Status:** ✅ Complete
 
 ---
 
-## ⏳ Phase 5: Deck Builder
+## ✅ Phase 5: Deck Builder
 
 **Goal:** AI-powered deck construction with constraints and recommendations
 
-- Format constraints (Commander, Modern, Standard, etc.)
-- Mana curve analysis
-- Theme-based generation ("aristocrats", "voltron", "control")
-- Commander synergies
-- Missing piece identification
-- Weakness detection
-- Power level tuning (casual → competitive)
-- Combo integration
-- [ ] Synergy scores > threshold
-- [ ] Mana curve is playable
-- [ ] Can suggest meaningful upgrades
-**Estimated Timeline:** 1-2 weeks
+### Completed Features
+
+**Core Deck Operations:**
+- `build_deck`: Construct decks from card pools with format constraints
+- `validate_deck`: Check legality, format rules, and card limits
+- `analyze_deck`: Mana curve, type distribution, color analysis, weakness detection
+- `suggest_cards`: AI-powered card recommendations with combo detection
+
+**Advanced Suggestion System:**
+
+1. **10-Factor Combo Ranking**
+   - Archetype fit (+10): Matches deck theme/tags
+   - Commander synergy (+15): Combo includes commander
+   - Color identity overlap (+5 per match): Fits deck colors
+   - Budget fit (+10 if under, penalty if over)
+   - Power level fit (+8 if matching target)
+   - Complexity bonus (+5 low, -3 high)
+   - Assembly ease (+8 for 2-card, +4 for 3-card, penalty for 4+)
+   - Disruptibility penalty (-2 per weakness)
+   - Infinite combo boost (+12)
+   - Popularity boost (+5 * score)
+
+2. **Flexible User Controls**
+   - `combo_mode`: "focused" (strict) or "broad" (all relevant)
+   - `combo_limit`: Max combos per suggestion
+   - `combo_types`: Filter by specific types (infinite_mana, engine, etc.)
+   - `exclude_cards`: Exclude specific cards from combos
+   - `sort_by`: Sort by power, price, popularity, or complexity
+   - `explain_combos`: LLM-generated explanations
+
+3. **Exhaustive Combo Detection**
+   - Checks suggested card + deck cards
+   - Checks suggested card + commander
+   - Checks suggested card + other suggestions
+   - Applies all filters (theme, format, colors, budget, legality)
+
+4. **MCP & CLI Integration**
+   - Exposed via MCP server tools
+   - Full CLI with JSON constraint support
+   - Programmatic API access
+
+### Key Achievements
+- Intelligent combo recommendations with 10-factor ranking
+- Flexible constraint-based search
+- LLM-powered insights
+- Format-aware deck building
+- Commander synergy detection
+- Budget and power level optimization
+
+**Status:** ✅ Complete (See `PHASE_5_ENHANCEMENTS.md` for details)
 
 ---
 
@@ -392,6 +422,6 @@ Future: Consider opening to community contributions after Phase 6.
 
 ---
 
-**Last Updated:** October 20, 2025  
-**Next Review:** After Phase 4 completion  
-**Status:** Phase 3 complete, Phase 4 ready to start 🚀
+**Last Updated:** October 21, 2025  
+**Next Review:** After Phase 6 planning  
+**Status:** Phase 5 complete! Ready for UI enhancements 🚀

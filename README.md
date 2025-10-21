@@ -81,38 +81,98 @@ mtg-card-app
 python -m mtg_card_app
 ```
 
-### Running Submodules Independently
+### Command Line Interfaces
 
-Each submodule can be run independently:
+Two CLIs are provided for quick testing and scripting.
 
-#### Deck Builder Module
+#### Deck Builder CLI
 
 ```bash
-# Using the installed script
-mtg-deck-builder
+# Build a deck from a pool file (newline-delimited card names)
+mtg-deck-builder build \
+    --format Commander \
+    --pool cards.txt \
+    --commander "Edgar Markov" \
+    --metadata '{"theme":"vampires"}'
 
-# Using python -m
-python -m mtg_card_app.deck_builder
+# Validate a deck JSON
+mtg-deck-builder validate --deck deck.json
 
-# With options
-mtg-deck-builder --name "My Awesome Deck"
-mtg-deck-builder --interactive
+# Analyze a deck JSON (curve, types, colors, issues)
+mtg-deck-builder analyze --deck deck.json
+
+# Suggest cards with basic constraints
+mtg-deck-builder suggest --deck deck.json --constraints '{"budget":200}'
+
+# Suggest cards with advanced combo controls
+mtg-deck-builder suggest --deck deck.json --constraints '{
+  "theme": "control",
+  "budget": 100.0,
+  "power": 7,
+  "combo_mode": "focused",
+  "combo_limit": 3,
+  "combo_types": ["infinite_mana", "infinite_draw"],
+  "exclude_cards": ["Thassa'\''s Oracle"],
+  "sort_by": "power",
+  "explain_combos": true
+}'
+
+# Export deck to various formats
+mtg-deck-builder export --deck deck.json --format text --output deck.txt
+mtg-deck-builder export --deck deck.json --format moxfield
+mtg-deck-builder export --deck deck.json --format arena --output arena_deck.txt
+
+# Alternatively, run with python -m
+python -m mtg_card_app.deck_builder suggest --deck deck.json
 ```
 
-#### Card Search Module
+##### Constraint Options
+
+When using `suggest`, the following constraint keys are available:
+
+- **theme** (str): Deck theme/archetype (e.g., "control", "aggro", "combo")
+- **budget** (float): Maximum total price in USD
+- **power** (int): Target power level from 1 (casual) to 10 (cEDH)
+- **banned** (list): Card names to exclude from suggestions
+- **n_results** (int): Maximum number of suggestions to return
+- **combo_mode** (str): "focused" (strict constraints) or "broad" (all relevant)
+- **combo_limit** (int): Maximum combos to show per suggestion
+- **combo_types** (list): Filter by combo types:
+  - `infinite_mana`, `infinite_draw`, `infinite_damage`, `infinite_life`
+  - `infinite_tokens`, `infinite_mill`, `lock`, `one_shot`, `engine`, `synergy`, `other`
+- **exclude_cards** (list): Additional cards to exclude from combos
+- **sort_by** (str): Sort results by:
+  - `power` (default): By ranking score
+  - `price`: Cheapest first
+  - `popularity`: Most popular first
+  - `complexity`: Simplest first
+- **explain_combos** (bool): Include LLM-powered explanations for each combo
+
+##### Export Formats
+
+When using `export`, the following formats are available:
+
+- **text**: Plain text with sections and headers (human-readable)
+- **json**: JSON format (programmatic access)
+- **moxfield**: Moxfield.com import format
+- **mtgo**: Magic Online format
+- **arena**: MTG Arena format (with set codes if available)
+- **archidekt**: Archidekt.com import format
+
+#### Card Search CLI
 
 ```bash
-# Using the installed script
-mtg-card-search
+# Fuzzy search by name; prints JSON list of cards
+mtg-card-search search --name "Lightning Bolt"
 
-# Using python -m
-python -m mtg_card_app.card_search
+# Natural language query via RAG + LLM
+mtg-card-search query --text "best blue counterspells under $5"
 
-# With search options
-mtg-card-search --name "Lightning"
-mtg-card-search --color Red
-mtg-card-search --type Instant
-mtg-card-search --interactive
+# Find combo pieces for a card
+mtg-card-search combos --card "Isochron Scepter" --n 3
+
+# Alternatively, run with python -m
+python -m mtg_card_app.card_search query --text "efficient removal"
 ```
 
 ### Programmatic Usage
@@ -120,18 +180,21 @@ mtg-card-search --interactive
 You can also use the package programmatically in your Python code:
 
 ```python
-from mtg_card_app.deck_builder import DeckBuilder
-from mtg_card_app.card_search import CardSearch
+from mtg_card_app.core.manager_registry import ManagerRegistry
+from mtg_card_app.domain.entities.deck import Deck
 
-# Build a deck
-deck = DeckBuilder("My Deck")
-deck.add_card("Lightning Bolt", 4)
-deck.list_cards()
+interactor = ManagerRegistry.get_instance().interactor
 
 # Search for cards
-searcher = CardSearch()
-results = searcher.search_by_name("bolt")
-searcher.print_results(results)
+cards = interactor.search_cards("Lightning Bolt")
+cards_json = [c.to_dict() for c in cards]
+
+# Build/validate/analyze/suggest deck
+pool = [f"Card{i}" for i in range(1, 101)]
+deck = interactor.build_deck("Commander", pool, commander="Card1", metadata={"theme": "control"})
+valid = interactor.validate_deck(Deck.from_dict(deck.to_dict()))
+analysis = interactor.analyze_deck(Deck.from_dict(deck.to_dict()))
+suggestions = interactor.suggest_cards(Deck.from_dict(deck.to_dict()), {"budget": 200})
 ```
 
 See `examples/usage_example.py` for more detailed examples.

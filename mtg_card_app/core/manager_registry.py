@@ -62,6 +62,17 @@ class ManagerRegistry:
 
     _instance: Optional["ManagerRegistry"] = None
 
+    _deck_builder_manager = None
+
+    @property
+    def deck_builder_manager(self):
+        """Get the DeckBuilderManager."""
+        if self._deck_builder_manager is None:
+            from mtg_card_app.managers.deck.manager import DeckBuilderManager
+
+            self._deck_builder_manager = DeckBuilderManager()
+        return self._deck_builder_manager
+
     def __init__(
         self,
         data_dir: str = "data",
