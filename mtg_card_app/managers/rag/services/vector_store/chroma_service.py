@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import chromadb
 from chromadb.config import Settings
@@ -33,8 +33,8 @@ class ChromaVectorStoreService:
         self.collection_name = collection_name
 
         # Lazy initialization
-        self._client: Optional[chromadb.Client] = None
-        self._collection: Optional[chromadb.Collection] = None
+        self._client: chromadb.Client | None = None
+        self._collection: chromadb.Collection | None = None
 
         logger.info(f"Initialized ChromaVectorStoreService with data_dir: {data_dir}")
 
@@ -74,8 +74,8 @@ class ChromaVectorStoreService:
     def add_embedding(
         self,
         id: str,
-        embedding: List[float],
-        metadata: Dict[str, Any],
+        embedding: list[float],
+        metadata: dict[str, Any],
         document: str,
     ) -> bool:
         """Add a single embedding to ChromaDB."""
@@ -94,10 +94,10 @@ class ChromaVectorStoreService:
 
     def add_embeddings(
         self,
-        ids: List[str],
-        embeddings: List[List[float]],
-        metadatas: List[Dict[str, Any]],
-        documents: List[str],
+        ids: list[str],
+        embeddings: list[list[float]],
+        metadatas: list[dict[str, Any]],
+        documents: list[str],
     ) -> bool:
         """Add multiple embeddings in batch."""
         try:
@@ -113,7 +113,7 @@ class ChromaVectorStoreService:
             logger.error(f"Error adding embeddings: {e}")
             return False
 
-    def get_embedding(self, id: str) -> Optional[List[float]]:
+    def get_embedding(self, id: str) -> list[float] | None:
         """Retrieve an embedding by ID."""
         try:
             result = self.collection.get(
@@ -123,20 +123,20 @@ class ChromaVectorStoreService:
             # Check if we got results - ChromaDB returns empty lists if not found
             if not result or not result.get("ids") or len(result["ids"]) == 0:
                 return None
-            
+
             # If we have IDs, check if embeddings were included
             if "embeddings" not in result:
                 return None
-            
+
             embeddings_list = result["embeddings"]
             # embeddings_list should be a list; check length first to avoid numpy array truthiness issues
             if embeddings_list is None or len(embeddings_list) == 0:
                 return None
-                
+
             embedding = embeddings_list[0]
             if embedding is None:
                 return None
-            
+
             # Convert numpy array to list if needed
             if hasattr(embedding, "tolist"):
                 return embedding.tolist()
@@ -156,10 +156,10 @@ class ChromaVectorStoreService:
 
     def search_similar(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         n_results: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Tuple[str, float, Dict[str, Any]]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[tuple[str, float, dict[str, Any]]]:
         """Search for similar embeddings using ChromaDB."""
         try:
             where_filter = filters if filters else None
@@ -215,7 +215,7 @@ class ChromaVectorStoreService:
             logger.error(f"Error counting embeddings: {e}")
             return 0
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get ChromaDB-specific statistics."""
         try:
             count = self.count()

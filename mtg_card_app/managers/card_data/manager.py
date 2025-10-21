@@ -1,7 +1,7 @@
 """Card data manager for fetching and caching card data."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mtg_card_app.domain.entities import Card
 from mtg_card_app.managers.card_data.services import (
@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class CardDataManager:
+    def get_all_cards(self, limit: int = 1000) -> list[Card]:
+        """Return all cards from local storage (for orchestrator workflows)."""
+        return self.card_service.get_all(limit=limit)
+
     """Manages card data fetching and caching.
 
     This manager coordinates between a card data service and local storage,
@@ -35,7 +39,7 @@ class CardDataManager:
         self.card_service = card_service
         self.card_data_service = card_data_service
 
-    def get_card(self, name: str, fetch_if_missing: bool = True) -> Optional[Card]:
+    def get_card(self, name: str, fetch_if_missing: bool = True) -> Card | None:
         """Get a card by name, fetching from card data service if not in local storage.
 
         Args:
@@ -65,7 +69,7 @@ class CardDataManager:
 
         return None
 
-    def get_card_by_id(self, card_id: str, fetch_if_missing: bool = True) -> Optional[Card]:
+    def get_card_by_id(self, card_id: str, fetch_if_missing: bool = True) -> Card | None:
         """Get a card by Scryfall ID.
 
         Args:
@@ -130,7 +134,7 @@ class CardDataManager:
         query: str,
         use_local: bool = True,
         use_scryfall: bool = False,
-    ) -> List[Card]:
+    ) -> list[Card]:
         """Search for cards using Scryfall syntax or local criteria.
 
         Args:
@@ -168,7 +172,7 @@ class CardDataManager:
 
         return results
 
-    def bulk_import_cards(self, card_names: List[str], fuzzy: bool = True) -> Dict[str, Any]:
+    def bulk_import_cards(self, card_names: list[str], fuzzy: bool = True) -> dict[str, Any]:
         """Import multiple cards from Scryfall.
 
         Args:
@@ -214,11 +218,11 @@ class CardDataManager:
 
         return stats
 
-    def get_budget_cards(self, max_price: float) -> List[Card]:
+    def get_budget_cards(self, max_price: float) -> list[Card]:
         """Get cards under a certain price."""
         return self.card_service.get_budget_cards(max_price)
 
-    def refresh_card_prices(self, card_ids: Optional[List[str]] = None) -> int:
+    def refresh_card_prices(self, card_ids: list[str] | None = None) -> int:
         """Refresh pricing data for cards by re-fetching from Scryfall.
 
         Args:
@@ -247,7 +251,7 @@ class CardDataManager:
         logger.info(f"Refreshed {refreshed} card prices")
         return refreshed
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about card data."""
         return {
             "total_cards": self.card_service.count(),
