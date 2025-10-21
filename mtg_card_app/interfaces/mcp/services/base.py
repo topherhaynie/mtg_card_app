@@ -1,19 +1,18 @@
 """Abstract base class for MCP services (protocol layer)."""
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 
 class MCPService(ABC):
     """Protocol for MCP communication services (stdio, socket, etc.)."""
 
     @abstractmethod
-    def read_request(self) -> Any:
-        """Read a request from the client (blocking)."""
+    def read_request(self) -> dict[str, object]:
+        """Read a request from the client (blocking) and return a JSON object."""
 
     @abstractmethod
-    def send_response(self, response: Any) -> None:
-        """Send a response to the client."""
+    def send_response(self, response: object) -> None:
+        """Send a JSON-serializable response to the client."""
 
     @abstractmethod
     def close(self) -> None:

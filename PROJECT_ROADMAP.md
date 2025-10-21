@@ -136,101 +136,32 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 
 ## 🚧 Phase 4: MCP Interface (In Progress)
 
-**Goal:** Build Model Context Protocol server for AI assistant integration
+For a concise status, see `PHASE_4_STATUS.md`.
 
-### Progress so far
-- Protocol layer scaffolded and wired to the business logic:
-  - `MCPManager` orchestrates request dispatch to `Interactor`.
-  - Service abstraction `MCPService` with stdio implementation `StdioMCPService`.
-  - Entry point `interfaces/mcp/__main__.py` runs the stdio server loop via `ManagerRegistry`.
-- Core tools implemented in dispatch (backed by Interactor):
-  - `query_cards` → `Interactor.answer_natural_language_query`
-  - `find_combo_pieces` → `Interactor.find_combo_pieces`
-  - `search_cards` → `Interactor.search_cards`
-- Dependency injection cleanup completed:
-  - `Interactor` refactored to require explicit dependencies; no registry lookups.
-  - `ManagerRegistry` is the sole wiring hub; circular imports eliminated.
-- Tests updated and expanded:
-  - Unit tests for MCP manager + stdio service.
-  - All unit tests pass across the repo (60 passed on Oct 21, 2025).
+### Completed in Phase 4 so far
+- JSON-RPC stdio transport with MCP-style framing + tests
+- Unified `MCPManager` dispatch (legacy + JSON-RPC) with JSON Schema validation
+- Tools implemented: query_cards, search_cards, find_combo_pieces, explain_card, compare_cards
+- initialize now advertises server version, capabilities, input schemas, and output schemas (e.g., for search_cards)
+- History with timestamps, duration_ms, and request ids (legacy ids generated) + filtering API (tool, since, id, error_only)
+- Official MCP adapter and CLI mode switch (`--server classic|official`, default classic)
+- Classic CLI smoke validated (initialize + search_cards); MCP unit tests green (13)
 
-### What’s working now
-- Basic stdio-based MCP loop that reads a single-line JSON request and returns a JSON response.
-- Tool dispatch to Interactor with real functionality and coverage by tests.
-- Clean architecture preserved (thin interface layer, business logic in Interactor).
+### Remaining for Phase 4 completion
+- Initialize polish: per-tool descriptions/examples; finalize capability fields
+- Optional output validation toggle (enforce outputSchema at runtime)
+- Align legacy error shape with JSON-RPC error objects
+- Observability knobs (log level, history limits)
+- Claude Desktop integration guide and smoke
+- E2E JSON-RPC tests per tool; performance notes
+- Scale-up: import Oracle (unique) cards and vectorize full set
 
-### Planned Features
+### Scale-up steps (pre-Phase 5)
+1) Import oracle_cards bulk from Scryfall to local DB (see `scripts/import_oracle_cards.py`)
+2) Vectorize all cards (see `scripts/vectorize_cards.py`)
+3) Verify RAG queries and performance at full scale
 
-#### 4.1: MCP Server Foundation
-- Implement full MCP protocol specification (handshake, capabilities, JSON-RPC framing)
-- Server lifecycle management
-- Connection handling (stdio transport) [basic loop implemented]
-- Structured error handling and logging
-
-#### 4.2: Tool Registration
-**Core Tools:**
-- `query_cards` - Natural language card search
-  - Input: query string, filters (optional)
-  - Output: Formatted card results with explanations
-  
-- `find_combo_pieces` - Discover card combos
-  - Input: card name, result limit
-  - Output: Synergy analysis with power levels
-  
-- `search_cards` - Direct card lookup
-  - Input: card name or ID
-  - Output: Full card details
-
-**Advanced Tools:**
-- `explain_card` - Detailed card analysis
-- `compare_cards` - Side-by-side comparison
-- `suggest_alternatives` - Budget/power level alternatives
-
-### Next steps (Phase 4)
-1. Adopt the official MCP Python library and protocol framing:
-  - Handshake/capabilities, JSON-RPC over stdio, tool registration metadata.
-  - Keep `MCPManager` as the thin adapter to Interactor.
-2. Define JSON Schemas for tool inputs/outputs and add validation.
-3. Add session/conversation context in the MCP layer (history, follow-ups, state).
-4. Improve error contract: structured error objects, error codes, and user-facing messages.
-5. Implement advanced tools: `explain_card`, `compare_cards`, `suggest_alternatives`.
-6. Observability: configurable logging, request IDs, timing, and debug toggles.
-7. Claude Desktop integration:
-  - Add setup docs and example config to register the server.
-  - Run smoke tests and record example transcripts.
-8. E2E tests for MCP:
-  - Golden-path JSON-RPC sessions per tool, error-path cases, and schema checks.
-9. Performance sanity checks and small load test for tool calls (<100ms target where feasible).
-
-#### 4.3: Conversation Context
-- Session management
-- Query history tracking
-- Context-aware responses
-- Follow-up question handling
-
-#### 4.4: Claude Desktop Integration
-- Register as MCP server
-- Test in Claude Desktop
-- Configuration documentation
-- Example conversations
-
-### Success Criteria
-- [ ] MCP server starts and accepts connections (per official spec)
-- [ ] All core tools registered and working (with JSON Schemas)
-- [ ] Claude Desktop can call tools successfully
-- [ ] Conversation context maintains state
-- [ ] Error handling provides helpful feedback
-- [ ] Documentation for setup and usage
-- [x] Basic stdio loop present with working dispatch (tests passing)
-
-### Technical Requirements
-- Follow MCP spec: https://modelcontextprotocol.io/
-- Use `mcp` Python package
-- Integrate with existing `Interactor`
-- Add MCP-specific tests
-- Performance: <100ms tool invocation
-
-**Estimated Timeline:** 2-3 days
+**ETA to finish Phase 4:** ~1–2 short work sessions
 
 ---
 
@@ -238,40 +169,17 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 
 **Goal:** AI-powered deck construction with constraints and recommendations
 
-### Planned Features
-
-#### 5.1: Deck Structure
-- Deck entity and validation
 - Format constraints (Commander, Modern, Standard, etc.)
 - Mana curve analysis
-- Color identity checking
-
-#### 5.2: AI Deck Generation
-- Budget-constrained building
 - Theme-based generation ("aristocrats", "voltron", "control")
 - Commander synergies
-- Automatic land calculation
-
-#### 5.3: Deck Analysis
-- Synergy scoring
 - Missing piece identification
 - Weakness detection
-- Upgrade suggestions
-
-#### 5.4: Deck Optimization
-- Budget upgrades (replace cards with better alternatives)
 - Power level tuning (casual → competitive)
 - Combo integration
-- Sideboard suggestions
-
-### Success Criteria
-- [ ] Generate complete deck from theme/commander
-- [ ] Respect budget constraints
-- [ ] Format-legal decks only
 - [ ] Synergy scores > threshold
 - [ ] Mana curve is playable
 - [ ] Can suggest meaningful upgrades
-
 **Estimated Timeline:** 1-2 weeks
 
 ---
@@ -282,13 +190,11 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 
 ### 6.1: CLI Interface (Command Line)
 
-**Goal:** Simple, scriptable interface for power users
 
 #### Planned Features
 - **Interactive Mode**
   - REPL-style query interface
   - Command history
-  - Tab completion
   - Colorized output
   
 - **Commands**
@@ -297,36 +203,22 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
   mtg combo "Isochron Scepter"
   mtg search "Lightning Bolt"
   mtg deck build --commander "Muldrotha" --budget 200
-  mtg deck analyze my_deck.txt
   ```
 
 - **Configuration**
   - User preferences file
   - Default filters
-  - Output formatting options
   - API key management
 
 - **Output Formats**
   - Human-readable (default)
   - JSON (for scripting)
   - Markdown (for documentation)
-  - CSV (for spreadsheets)
-
-#### Technical Approach
-- Use `click` or `typer` for CLI framework
-- Integrate with `Interactor` directly
 - Add `mtg_card_app/ui/cli/` module
 - Entry point: `mtg` command
-- Install via `pip install -e .`
-
-#### Success Criteria
-- [ ] All core operations available via CLI
-- [ ] Rich, readable output
-- [ ] Tab completion works
 - [ ] Help system is comprehensive
 - [ ] Scriptable for automation
 - [ ] Cross-platform (Mac, Linux, Windows)
-
 **Estimated Timeline:** 3-5 days
 
 ---
@@ -335,29 +227,12 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 
 **Goal:** Visual, user-friendly interface for casual users
 
-#### Technology Options (TBD)
-
-**Option A: Web Application**
-- **Frontend:** React/Next.js or Svelte
-- **Backend:** FastAPI server wrapping Interactor
 - **Deployment:** Local (http://localhost:3000) or hosted
 - **Pros:** Rich UI, familiar tech stack, easy sharing
-- **Cons:** More complex architecture, requires web server
-
-**Option B: Desktop Application**
-- **Framework:** Electron + React or Tauri + Svelte
 - **Integration:** Direct Python backend or REST API
 - **Pros:** Native feel, offline-first, easy distribution
-- **Cons:** Larger bundle size, platform builds
-
-**Option C: Native Desktop (Python)**
-- **Framework:** PyQt6 or tkinter
 - **Integration:** Direct Interactor calls
 - **Pros:** Simple architecture, no JS needed, fast
-- **Cons:** Less modern UI, harder styling
-
-**Option D: Terminal UI (TUI)**
-- **Framework:** Textual or Rich
 - **Integration:** Direct Interactor calls
 - **Pros:** Fast, works over SSH, lightweight
 - **Cons:** Limited UI capabilities, ASCII-only
@@ -390,24 +265,11 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
    - Track owned cards
    - Value tracking
    - Want list
-   - Trade suggestions
-
-**Design Principles:**
-- Mobile-responsive (if web)
-- Dark mode support
 - Fast, fluid interactions
 - Accessible (keyboard nav, screen readers)
-- Beautiful card imagery
-
-#### Success Criteria
-- [ ] Technology choice made and documented
-- [ ] Search interface functional
-- [ ] Combo explorer working
-- [ ] Deck builder basic functionality
 - [ ] Responsive design (if web)
 - [ ] Performance: <100ms interaction time
 - [ ] User testing with 3+ people
-
 **Estimated Timeline:** 2-4 weeks (depending on tech choice)
 
 ---
@@ -442,100 +304,46 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
     ┌──────▼──┐ ┌──▼───┐ ┌──▼──┐ ┌▼────┐
     │CardData │ │ RAG  │ │ LLM │ │Cache│
     │Service  │ │Manager│ │Mgr  │ │     │
-    └─────────┘ └──────┘ └─────┘ └─────┘
 ```
 
 ---
 
-## Current Status Summary
-
-### ✅ Completed (Phases 1-3)
-- **57 tests passing** (all core functionality)
-- **Clean architecture** with proper dependency injection
-- **Semantic search** with ChromaDB
-- **Natural language queries** with Ollama LLM
-- **Combo detection** with AI analysis
 - **Query caching** (18.58x speedup)
 - **Filter extraction** (100% accuracy)
-- **~50 cards embedded** and searchable
-
-### 🎯 Next Up (Phase 4)
-- **MCP server implementation**
 - **Claude Desktop integration**
 - **Tool registration** (query, combo, search)
 - **Conversation context management**
 
 ### 🔮 Future (Phases 5-6)
 
-## 🔮 Future (Phases 5-7)
 
 ### Phase 5: Deck Builder
-- AI-powered deck construction and recommendations
-
-### Phase 6: User Interfaces (UI)
-- CLI interface for power users (Typer/Click)
 - TUI (Textual, optional)
 - App interface (technology TBD: Web, Desktop, or Native)
-- Modular UI architecture for easy extension
-
-### Phase 7: Distribution & Installation
-- Docker image for universal deployment
-- Native installers (PyInstaller/Briefcase) for Windows, macOS, Linux
-- pip install via PyPI for Python users
 - Maintain all three options for maximum versatility
-- Clear documentation for each install method
 - Automate builds and releases where possible
 
 ---
 
-## Decision Points
-
-### Phase 4 Decisions (Immediate)
-- ✅ Use official `mcp` Python package
 - ✅ Stdio transport (standard for MCP)
 - ⏳ Session storage mechanism (in-memory vs persistent?)
-- ⏳ Rate limiting strategy (if needed)
 
 ### Phase 6 Decisions (Future)
-- ⏳ **App technology choice** - Web vs Desktop vs Native vs TUI
-  - Consider: development speed, maintainability, user base
   - Recommend: Start with Web (FastAPI + React) for maximum reach
-- ⏳ **Hosting strategy** - Local-only vs cloud deployment
 - ⏳ **Authentication** - If multi-user, how to handle?
 
 ---
 
-## Success Metrics
-
-### Technical Metrics
-- Test coverage: >90% (currently ~95%)
 - Response time: <100ms for cached queries, <2s for LLM queries
 - Uptime: 99.9% for MCP server
-- Memory usage: <500MB typical operation
-
-### User Metrics (Post-Phase 6)
-- Query success rate: >95% (user gets useful results)
 - User retention: Weekly active usage
-- Query diversity: Users exploring beyond basic searches
 - Deck builder adoption: >50% of users try it
 
 ---
 
-## Documentation Needs
-
-### Current Docs ✅
-- Architecture diagrams and flow
 - API documentation (protocols)
 - Testing strategy and patterns
-- Setup and environment configuration
-
-### Needed Docs (Phase 4+)
-- [ ] MCP server setup guide
-- [ ] Claude Desktop integration tutorial
-- [ ] Example conversations and queries
-- [ ] Tool usage reference
 - [ ] CLI user guide
-- [ ] App user guide (when ready)
 - [ ] Deployment guide (if hosting)
 
 ---
@@ -562,7 +370,6 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 2. **Tech Choice Regret** - Wrong UI framework chosen
    - Mitigation: Start simple (web), can always migrate later
    
-3. **Scope Creep** - Features balloon beyond MVP
    - Mitigation: Stick to phase plan, defer nice-to-haves
 
 ---
@@ -572,18 +379,13 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 1. **Phase 4:** How to handle long-running queries in MCP? (>30s LLM generation)
 2. **Phase 5:** What deck formats to prioritize? (Commander, Modern, Standard?)
 3. **Phase 6:** Single-user or multi-user? Affects architecture significantly
-4. **Phase 6:** Monetization strategy? (Free, freemium, paid?) Affects hosting decisions
 5. **General:** Should we support custom card databases? (proxies, custom formats)
 
 ---
 
-## Contributing
-
-This is currently a solo project, but architecture supports collaboration:
 - Protocol-based design makes parallel development easy
 - Test coverage ensures changes don't break existing features
 - Documentation helps onboarding
-
 Future: Consider opening to community contributions after Phase 6.
 
 ---

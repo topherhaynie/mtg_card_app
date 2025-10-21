@@ -95,3 +95,33 @@ def test_mcpmanager_search_cards(monkeypatch):
     service.send_response(response)
     output = stdout.getvalue()
     assert "card:baz" in output
+
+
+def test_mcpmanager_jsonrpc_search_cards(monkeypatch):
+    # JSON-RPC style request
+    input_data = (
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "search_cards",
+                "params": {"card_name": "baz"},
+            },
+        )
+        + "\n"
+    )
+    stdin = io.StringIO(input_data)
+    stdout = io.StringIO()
+    monkeypatch.setattr(sys, "stdin", stdin)
+    monkeypatch.setattr(sys, "stdout", stdout)
+    service = StdioMCPService()
+    interactor = DummyInteractor()
+    manager = MCPManager(service, interactor)
+    request = service.read_request()
+    response = manager.dispatch(request)
+    service.send_response(response)
+    output = stdout.getvalue()
+    # Ensure JSON-RPC wrapper present and result contains card
+    assert '"jsonrpc": "2.0"' in output
+    assert '"id": 1' in output
+    assert "card:baz" in output

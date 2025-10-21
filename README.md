@@ -40,6 +40,35 @@ mtg_card_app/
 
 ## Usage
 
+### MCP Server
+
+You can run the MCP server in two modes: the classic stdio server (default) or the official MCP Python server.
+
+Run classic (default):
+
+```bash
+python -m mtg_card_app.interfaces.mcp
+```
+
+Run the official MCP server (requires the `mcp` package, already declared in pyproject):
+
+```bash
+python -m mtg_card_app.interfaces.mcp --server official
+```
+
+Or set an environment default:
+
+```bash
+MCP_SERVER=official python -m mtg_card_app.interfaces.mcp
+```
+
+With uv (optional):
+
+```bash
+uv pip compile pyproject.toml -o requirements.txt
+uv pip sync requirements.txt
+```
+
 ### Running the Main Application
 
 After installation, you can run the main application:
