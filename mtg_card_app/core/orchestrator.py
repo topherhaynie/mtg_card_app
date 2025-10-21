@@ -70,7 +70,7 @@ Response:"""
             response = self.llm.generate(extraction_prompt)
             # Try to parse JSON from response - handle various formats
             clean_response = response.strip()
-            
+
             # Remove markdown code blocks if present
             if clean_response.startswith("```"):
                 lines = clean_response.split("\n")
@@ -84,7 +84,7 @@ Response:"""
                     if in_code_block or (not line.startswith("```")):
                         json_lines.append(line)
                 clean_response = "\n".join(json_lines).strip()
-            
+
             # Try to extract JSON if there's extra text
             # Look for {...} pattern
             if not clean_response.startswith("{"):

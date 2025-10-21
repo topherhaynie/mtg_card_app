@@ -148,7 +148,7 @@ def test_filter_quality():
     # Test CMC filtering
     query = "Find removal spells under 2 mana"
     print(f"Query: {query}")
-    print(f"Expected: Should filter to CMC <= 1")
+    print("Expected: Should filter to CMC <= 1")
     print()
 
     response = orchestrator.answer_query(query)
@@ -159,7 +159,7 @@ def test_filter_quality():
     # Test color filtering
     query2 = "Show me blue counterspells"
     print(f"Query: {query2}")
-    print(f"Expected: Should filter to blue cards")
+    print("Expected: Should filter to blue cards")
     print()
 
     response2 = orchestrator.answer_query(query2)
