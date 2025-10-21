@@ -20,7 +20,8 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 | 3 | LLM Integration | ✅ Complete | Natural language processing, combo analysis |
 | 4 | MCP Interface | 🎯 Next | Model Context Protocol server |
 | 5 | Deck Builder | ⏳ Future | AI-powered deck construction |
-| 6 | User Interfaces | ⏳ Future | CLI and App interfaces |
+| 6 | User Interfaces | ⏳ Future | CLI, TUI, and App interfaces |
+| 7 | Distribution & Installation | ⏳ Future | Multi-platform install: Docker, native, pip |
 
 ---
 
@@ -427,9 +428,25 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 - **Conversation context management**
 
 ### 🔮 Future (Phases 5-6)
-- **Deck builder** with AI recommendations
-- **CLI interface** for power users
-- **App interface** (technology TBD)
+
+## 🔮 Future (Phases 5-7)
+
+### Phase 5: Deck Builder
+- AI-powered deck construction and recommendations
+
+### Phase 6: User Interfaces (UI)
+- CLI interface for power users (Typer/Click)
+- TUI (Textual, optional)
+- App interface (technology TBD: Web, Desktop, or Native)
+- Modular UI architecture for easy extension
+
+### Phase 7: Distribution & Installation
+- Docker image for universal deployment
+- Native installers (PyInstaller/Briefcase) for Windows, macOS, Linux
+- pip install via PyPI for Python users
+- Maintain all three options for maximum versatility
+- Clear documentation for each install method
+- Automate builds and releases where possible
 
 ---
 
