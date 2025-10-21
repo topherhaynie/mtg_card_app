@@ -152,9 +152,11 @@ For a concise status, see `PHASE_4_STATUS.md`.
 - Optional output validation toggle (enforce outputSchema at runtime)
 - Align legacy error shape with JSON-RPC error objects
 - Observability knobs (log level, history limits)
-- Claude Desktop integration guide and smoke
 - E2E JSON-RPC tests per tool; performance notes
 - Scale-up: import Oracle (unique) cards and vectorize full set
+
+### Backlog / Nice-to-Have
+- Claude Desktop integration guide, config, and smoke test (not required for Phase 4 completion)
 
 ### Scale-up steps (pre-Phase 5)
 1) Import oracle_cards bulk from Scryfall to local DB (see `scripts/import_oracle_cards.py`)

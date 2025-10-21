@@ -15,13 +15,21 @@ from mtg_card_app.interfaces.mcp.services.base import MCPService
 class MCPManager:
     """Manager for MCP service lifecycle and request dispatch."""
 
-    MAX_HISTORY = 100
+    DEFAULT_MAX_HISTORY = 100
 
-    def __init__(self, service: MCPService, interactor: Interactor) -> None:
-        """Initialize with a service transport and the domain interactor."""
+    def __init__(
+        self, service: MCPService, interactor: Interactor, validate_output: bool = False, max_history: int = None
+    ) -> None:
+        """Initialize with a service transport and the domain interactor.
+
+        :param validate_output: If True, validate tool outputs against outputSchema.
+        :param max_history: Maximum number of history entries to keep (default: 100)
+        """
         self.service = service
         self.interactor = interactor
         self._history: list[dict] = []
+        self._validate_output = validate_output
+        self._max_history = max_history if max_history is not None else self.DEFAULT_MAX_HISTORY
         # JSON Schemas for tool/method outputs (optional)
         self._output_schemas: dict[str, dict] = {
             "query_cards": {"type": "string"},
@@ -125,6 +133,12 @@ class MCPManager:
             try:
                 self._validate_params(method, params)
                 result = self._dispatch_tool(method, params)
+                # Output validation if enabled and schema exists
+                if self._validate_output and method in self._output_schemas:
+                    try:
+                        validate(instance=result, schema=self._output_schemas[method])
+                    except ValidationError as ve:
+                        raise RuntimeError(f"Output validation failed: {ve.message}")
                 duration_ms = (perf_counter() - _start) * 1000.0
                 self._record_history(
                     method,
@@ -216,7 +230,15 @@ class MCPManager:
                         **({"duration_ms": round(duration_ms, 3)} if duration_ms is not None else {}),
                     },
                 )
-                response = {"error": msg}
+                response = {
+                    "error": {
+                        "code": -32602,
+                        "message": msg,
+                        "id": legacy_req_id,
+                        "tool": tool,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                }
             except (TypeError, RuntimeError, ValueError) as e:
                 duration_ms = (perf_counter() - _start) * 1000.0 if "_start" in locals() else None
                 self._record_history(
@@ -229,7 +251,15 @@ class MCPManager:
                         **({"duration_ms": round(duration_ms, 3)} if duration_ms is not None else {}),
                     },
                 )
-                response = {"error": str(e)}
+                response = {
+                    "error": {
+                        "code": -32000,
+                        "message": str(e),
+                        "id": legacy_req_id,
+                        "tool": tool,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                }
 
         return response
 
@@ -241,12 +271,52 @@ class MCPManager:
                 version_str = importlib_metadata.version("mtg-card-app")
             except importlib_metadata.PackageNotFoundError:  # local dev fallback
                 version_str = "0.1.0"
+            # Tool descriptions and examples
+            tool_metadata = {
+                "query_cards": {
+                    "description": (
+                        "Answer a natural language query about Magic: The Gathering cards, rules, or combos."
+                    ),
+                    "example": {"query": "What are the best blue counterspells under $5?"},
+                },
+                "explain_card": {
+                    "description": "Explain a specific card in simple terms and provide strategic uses.",
+                    "example": {"card_name": "Sol Ring"},
+                },
+                "compare_cards": {
+                    "description": (
+                        "Compare two cards, including pros/cons, synergies, and when to choose one over the other."
+                    ),
+                    "example": {"card_a": "Lightning Bolt", "card_b": "Shock"},
+                },
+                "find_combo_pieces": {
+                    "description": "Find cards that combo with a given card.",
+                    "example": {"card_name": "Isochron Scepter", "n_results": 5},
+                },
+                "search_cards": {
+                    "description": "Search for cards by name (fuzzy match). Returns a list of card objects.",
+                    "example": {"card_name": "Lightning"},
+                },
+                "get_history": {
+                    "description": "Retrieve recent tool invocations, optionally filtered by tool, id, or error_only.",
+                    "example": {"limit": 10, "tool": "query_cards"},
+                },
+                "clear_history": {
+                    "description": "Clear the invocation history.",
+                    "example": {},
+                },
+            }
             tools_desc = []
             for key, schema in self._schemas.items():
                 tool_info = {"name": key, "schema": schema}
                 out_schema = self._output_schemas.get(key)
                 if out_schema is not None:
                     tool_info["outputSchema"] = out_schema
+                meta = tool_metadata.get(key, {})
+                if meta.get("description"):
+                    tool_info["description"] = meta["description"]
+                if meta.get("example"):
+                    tool_info["example"] = meta["example"]
                 tools_desc.append(tool_info)
             return {
                 "server": "mtg_card_app",
@@ -255,8 +325,14 @@ class MCPManager:
                     "protocol": "jsonrpc-2.0",
                     "contentTypes": ["application/json"],
                     "history": True,
+                    "historyMaxSize": self._max_history,
+                    "historyConfigurable": True,
                     "validation": "jsonschema",
                     "outputSchemas": True,
+                    "toolDescriptions": True,
+                    "examples": True,
+                    "outputValidationToggle": True,
+                    "outputValidationEnabled": self._validate_output,
                 },
                 "tools": tools_desc,
             }
@@ -360,8 +436,8 @@ class MCPManager:
         if result is not None:
             entry["result"] = result if isinstance(result, (str, int, float, bool, type(None))) else "ok"
         self._history.append(entry)
-        if len(self._history) > self.MAX_HISTORY:
-            del self._history[: -self.MAX_HISTORY]
+        if len(self._history) > self._max_history:
+            del self._history[: -self._max_history]
 
     def _validate_params(self, name: str | None, params: dict) -> None:
         """Validate params against a registered JSON Schema for the tool/method.
