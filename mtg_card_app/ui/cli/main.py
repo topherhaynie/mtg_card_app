@@ -71,9 +71,17 @@ def stats() -> None:
 
 @cli.command()
 def setup() -> None:
-    """Run initial setup wizard."""
-    console.print("[yellow]Setup wizard not yet implemented.[/yellow]")
-    console.print("Coming in Track 1 Phase 2!")
+    """Run initial setup wizard.
+    
+    Interactive wizard to configure:
+    - LLM provider selection
+    - API key configuration
+    - Data file verification
+    - Connection testing
+    """
+    from .commands.setup import run_setup_wizard
+
+    run_setup_wizard()
 
 
 @cli.command()
