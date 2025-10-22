@@ -132,4 +132,3 @@ class TestServiceInfo:
 
         # Assert
         assert isinstance(result, dict)
-

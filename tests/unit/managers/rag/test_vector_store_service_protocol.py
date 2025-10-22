@@ -76,8 +76,8 @@ class TestAddEmbedding:
     @pytest.mark.parametrize(
         "embedding_dim",
         [
-            384,   # all-MiniLM-L6-v2
-            768,   # BERT-based models
+            384,  # all-MiniLM-L6-v2
+            768,  # BERT-based models
             1536,  # OpenAI ada-002
         ],
     )
@@ -289,4 +289,3 @@ class TestServiceInfo:
 
         # Assert
         assert isinstance(result, dict)
-

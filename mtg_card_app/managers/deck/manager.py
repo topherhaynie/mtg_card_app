@@ -122,7 +122,7 @@ class DeckBuilderManager:
             {
                 "mana_curve": cmc_bins,
                 "type_counts": type_counts,
-                "colors": sorted(list(colors_seen)) if colors_seen else [],
+                "colors": sorted(colors_seen) if colors_seen else [],
                 "issues": issues,
                 "analysis_limited": not details_used,
             },

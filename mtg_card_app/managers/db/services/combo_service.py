@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mtg_card_app.domain.entities import Combo, ComboType
 from mtg_card_app.managers.db.services.base import BaseService
@@ -32,12 +32,12 @@ class ComboService(BaseService[Combo]):
         if not self.storage_path.exists():
             self._write_data({"combos": {}})
 
-    def _read_data(self) -> Dict[str, Any]:
+    def _read_data(self) -> dict[str, Any]:
         """Read data from JSON storage."""
         with open(self.storage_path) as f:
             return json.load(f)
 
-    def _write_data(self, data: Dict[str, Any]):
+    def _write_data(self, data: dict[str, Any]):
         """Write data to JSON storage."""
         with open(self.storage_path, "w") as f:
             json.dump(data, f, indent=2, default=str)
@@ -60,7 +60,7 @@ class ComboService(BaseService[Combo]):
 
         return entity
 
-    def get_by_id(self, entity_id: str) -> Optional[Combo]:
+    def get_by_id(self, entity_id: str) -> Combo | None:
         """Get a combo by its ID."""
         data = self._read_data()
         combo_data = data["combos"].get(entity_id)
@@ -74,7 +74,7 @@ class ComboService(BaseService[Combo]):
 
         return Combo(**combo_data)
 
-    def get_all(self, limit: Optional[int] = None, offset: int = 0) -> List[Combo]:
+    def get_all(self, limit: int | None = None, offset: int = 0) -> list[Combo]:
         """Get all combos with pagination."""
         data = self._read_data()
         combos = []
@@ -118,7 +118,7 @@ class ComboService(BaseService[Combo]):
 
         return False
 
-    def search(self, query: Dict[str, Any]) -> List[Combo]:
+    def search(self, query: dict[str, Any]) -> list[Combo]:
         """Search for combos matching criteria.
 
         Args:
@@ -201,7 +201,7 @@ class ComboService(BaseService[Combo]):
         data = self._read_data()
         return len(data["combos"])
 
-    def get_infinite_combos(self) -> List[Combo]:
+    def get_infinite_combos(self) -> list[Combo]:
         """Get all infinite combos."""
         data = self._read_data()
         results = []
@@ -216,11 +216,11 @@ class ComboService(BaseService[Combo]):
 
         return results
 
-    def get_budget_combos(self, max_price: float) -> List[Combo]:
+    def get_budget_combos(self, max_price: float) -> list[Combo]:
         """Get combos under a certain total price."""
         return self.search({"max_price": max_price})
 
-    def get_by_card_id(self, card_id: str) -> List[Combo]:
+    def get_by_card_id(self, card_id: str) -> list[Combo]:
         """Get all combos containing a specific card."""
         data = self._read_data()
         results = []

@@ -1,7 +1,7 @@
 """Sentence Transformers implementation of embedding service."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sentence_transformers import SentenceTransformer
 
@@ -19,7 +19,7 @@ class SentenceTransformerEmbeddingService:
 
     def __init__(
         self,
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         device: str = "cpu",
     ):
         """Initialize the embedding service.
@@ -33,7 +33,7 @@ class SentenceTransformerEmbeddingService:
         self.device = device
 
         # Lazy loading
-        self._model: Optional[SentenceTransformer] = None
+        self._model: SentenceTransformer | None = None
 
         logger.info(
             "Initialized SentenceTransformerEmbeddingService with model: %s",
@@ -52,12 +52,12 @@ class SentenceTransformerEmbeddingService:
             logger.info("Embedding model loaded successfully")
         return self._model
 
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> list[float]:
         """Embed a single text string."""
         embedding = self.model.encode(text)
         return embedding.tolist()
 
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Embed multiple texts in batch."""
         embeddings = self.model.encode(texts)
         return [emb.tolist() for emb in embeddings]
@@ -74,7 +74,7 @@ class SentenceTransformerEmbeddingService:
         """Get the model name."""
         return self.model_name
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get embedding service statistics."""
         stats = {
             "service": "SentenceTransformers",

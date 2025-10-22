@@ -5,7 +5,7 @@ allowing for easy swapping between different data sources (Scryfall, MTGJSON, et
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class CardDataService(ABC):
@@ -16,7 +16,7 @@ class CardDataService(ABC):
     """
 
     @abstractmethod
-    def get_card_by_name(self, name: str, exact: bool = True) -> Optional[Dict[str, Any]]:
+    def get_card_by_name(self, name: str, exact: bool = True) -> dict[str, Any] | None:
         """Get card data by name.
 
         Args:
@@ -32,7 +32,7 @@ class CardDataService(ABC):
         """
 
     @abstractmethod
-    def get_card_by_id(self, card_id: str) -> Optional[Dict[str, Any]]:
+    def get_card_by_id(self, card_id: str) -> dict[str, Any] | None:
         """Get card data by unique identifier.
 
         Args:
@@ -54,7 +54,7 @@ class CardDataService(ABC):
         direction: str = "auto",
         include_extras: bool = False,
         unique: str = "cards",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search for cards matching a query.
 
         Args:
@@ -73,7 +73,7 @@ class CardDataService(ABC):
         """
 
     @abstractmethod
-    def autocomplete(self, query: str, include_extras: bool = False) -> List[str]:
+    def autocomplete(self, query: str, include_extras: bool = False) -> list[str]:
         """Get autocomplete suggestions for a card name.
 
         Args:
@@ -89,7 +89,7 @@ class CardDataService(ABC):
         """
 
     @abstractmethod
-    def get_random_card(self, query: Optional[str] = None) -> Dict[str, Any]:
+    def get_random_card(self, query: str | None = None) -> dict[str, Any]:
         """Get a random card.
 
         Args:
@@ -106,18 +106,18 @@ class CardDataService(ABC):
     @abstractmethod
     def build_search_query(
         self,
-        colors: Optional[List[str]] = None,
-        color_identity: Optional[List[str]] = None,
-        type_line: Optional[str] = None,
-        oracle_text: Optional[str] = None,
-        mana_cost: Optional[str] = None,
-        cmc: Optional[int] = None,
-        power: Optional[str] = None,
-        toughness: Optional[str] = None,
-        rarity: Optional[str] = None,
-        set_code: Optional[str] = None,
+        colors: list[str] | None = None,
+        color_identity: list[str] | None = None,
+        type_line: str | None = None,
+        oracle_text: str | None = None,
+        mana_cost: str | None = None,
+        cmc: int | None = None,
+        power: str | None = None,
+        toughness: str | None = None,
+        rarity: str | None = None,
+        set_code: str | None = None,
         is_commander: bool = False,
-        format_legal: Optional[str] = None,
+        format_legal: str | None = None,
     ) -> str:
         """Build a search query from structured parameters.
 
@@ -150,7 +150,7 @@ class CardDataService(ABC):
         """
 
     @abstractmethod
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about this service's usage.
 
         Returns:
@@ -167,7 +167,7 @@ class CardDataService(ABC):
         """
         return False
 
-    def get_bulk_data_url(self) -> Optional[str]:
+    def get_bulk_data_url(self) -> str | None:
         """Get URL for bulk data download if supported.
 
         Returns:

@@ -194,7 +194,7 @@ class Interactor:
         all_colors = set()
         for card in cards:
             all_colors.update(card.color_identity)
-        combo.colors_required = sorted(list(all_colors))
+        combo.colors_required = sorted(all_colors)
 
         # Store combo
         combo = self.db_manager.combo_service.create(combo)

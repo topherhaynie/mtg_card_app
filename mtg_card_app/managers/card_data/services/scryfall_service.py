@@ -1,6 +1,6 @@
 """Scryfall implementation of the CardDataService."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mtg_card_app.interfaces.scryfall.client import ScryfallClient
 from mtg_card_app.managers.card_data.services.base import CardDataService
@@ -13,7 +13,7 @@ class ScryfallCardDataService(CardDataService):
     CardDataService interface, making it swappable with other implementations.
     """
 
-    def __init__(self, client: Optional[ScryfallClient] = None):
+    def __init__(self, client: ScryfallClient | None = None):
         """Initialize the Scryfall card data service.
 
         Args:
@@ -22,7 +22,7 @@ class ScryfallCardDataService(CardDataService):
         """
         self._client = client or ScryfallClient()
 
-    def get_card_by_name(self, name: str, exact: bool = True) -> Optional[Dict[str, Any]]:
+    def get_card_by_name(self, name: str, exact: bool = True) -> dict[str, Any] | None:
         """Get card data by name.
 
         Args:
@@ -47,7 +47,7 @@ class ScryfallCardDataService(CardDataService):
             # Other errors should propagate
             raise
 
-    def get_card_by_id(self, card_id: str) -> Optional[Dict[str, Any]]:
+    def get_card_by_id(self, card_id: str) -> dict[str, Any] | None:
         """Get card data by Scryfall ID.
 
         Args:
@@ -78,7 +78,7 @@ class ScryfallCardDataService(CardDataService):
         direction: str = "auto",
         include_extras: bool = False,
         unique: str = "cards",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search for cards using Scryfall search syntax.
 
         Args:
@@ -102,7 +102,7 @@ class ScryfallCardDataService(CardDataService):
         except Exception:
             return []
 
-    def autocomplete(self, query: str, include_extras: bool = False) -> List[str]:
+    def autocomplete(self, query: str, include_extras: bool = False) -> list[str]:
         """Get autocomplete suggestions for a card name.
 
         Args:
@@ -118,7 +118,7 @@ class ScryfallCardDataService(CardDataService):
         except Exception:
             return []
 
-    def get_random_card(self, query: Optional[str] = None) -> Dict[str, Any]:
+    def get_random_card(self, query: str | None = None) -> dict[str, Any]:
         """Get a random card.
 
         Args:
@@ -135,18 +135,18 @@ class ScryfallCardDataService(CardDataService):
 
     def build_search_query(
         self,
-        colors: Optional[List[str]] = None,
-        color_identity: Optional[List[str]] = None,
-        type_line: Optional[str] = None,
-        oracle_text: Optional[str] = None,
-        mana_cost: Optional[str] = None,
-        cmc: Optional[int] = None,
-        power: Optional[str] = None,
-        toughness: Optional[str] = None,
-        rarity: Optional[str] = None,
-        set_code: Optional[str] = None,
+        colors: list[str] | None = None,
+        color_identity: list[str] | None = None,
+        type_line: str | None = None,
+        oracle_text: str | None = None,
+        mana_cost: str | None = None,
+        cmc: int | None = None,
+        power: str | None = None,
+        toughness: str | None = None,
+        rarity: str | None = None,
+        set_code: str | None = None,
         is_commander: bool = False,
-        format_legal: Optional[str] = None,
+        format_legal: str | None = None,
     ) -> str:
         """Build a Scryfall search query from structured parameters.
 
@@ -223,7 +223,7 @@ class ScryfallCardDataService(CardDataService):
         """
         return "Scryfall"
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about Scryfall API usage.
 
         Returns:
@@ -243,7 +243,7 @@ class ScryfallCardDataService(CardDataService):
         """
         return True
 
-    def get_bulk_data_url(self, bulk_type: str = "default_cards") -> Optional[str]:
+    def get_bulk_data_url(self, bulk_type: str = "default_cards") -> str | None:
         """Get URL for Scryfall bulk data download.
 
         Args:

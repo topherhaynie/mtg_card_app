@@ -1,7 +1,7 @@
 """Base service class for database operations."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -26,7 +26,7 @@ class BaseService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_by_id(self, entity_id: str) -> Optional[T]:
+    def get_by_id(self, entity_id: str) -> T | None:
         """Retrieve an entity by its ID.
 
         Args:
@@ -38,7 +38,7 @@ class BaseService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_all(self, limit: Optional[int] = None, offset: int = 0) -> List[T]:
+    def get_all(self, limit: int | None = None, offset: int = 0) -> list[T]:
         """Retrieve all entities.
 
         Args:
@@ -75,7 +75,7 @@ class BaseService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def search(self, query: Dict[str, Any]) -> List[T]:
+    def search(self, query: dict[str, Any]) -> list[T]:
         """Search for entities matching criteria.
 
         Args:

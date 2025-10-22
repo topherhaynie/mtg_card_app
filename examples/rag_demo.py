@@ -1,7 +1,9 @@
 """Demo script for RAG (semantic search) functionality.
 
 This demonstrates:
-1. Embedding MTG cards into vector database
+1. Embedding     print("\n🔍 Search: 'add mana to your mana pool'")
+    results = rag.search_similar("add mana to your mana pool", n_results=3)
+    for i, (_card_id, similarity, metadata) in enumerate(results, 1): cards into vector database
 2. Semantic search for similar cards
 3. Finding cards with similar mechanics
 4. Storage monitoring
@@ -89,21 +91,21 @@ def main():
     # Example 1: Search for ramp spells
     print("\\n🔍 Search: 'add mana to your mana pool'")
     results = rag.search_similar("add mana to your mana pool", n_results=3)
-    for i, (card_id, similarity, metadata) in enumerate(results, 1):
+    for i, (_card_id, similarity, metadata) in enumerate(results, 1):
         print(f"  {i}. {metadata['name']} (similarity: {similarity:.3f})")
         print(f"     Type: {metadata['type_line']}")
 
     # Example 2: Search for card draw
     print("\\n🔍 Search: 'draw cards whenever you cast a spell'")
     results = rag.search_similar("draw cards whenever you cast a spell", n_results=3)
-    for i, (card_id, similarity, metadata) in enumerate(results, 1):
+    for i, (_card_id, similarity, metadata) in enumerate(results, 1):
         print(f"  {i}. {metadata['name']} (similarity: {similarity:.3f})")
         print(f"     Type: {metadata['type_line']}")
 
     # Example 3: Search for removal
     print("\\n🔍 Search: 'destroy target creature'")
     results = rag.search_similar("destroy target creature", n_results=3)
-    for i, (card_id, similarity, metadata) in enumerate(results, 1):
+    for i, (_card_id, similarity, metadata) in enumerate(results, 1):
         print(f"  {i}. {metadata['name']} (similarity: {similarity:.3f})")
         print(f"     Type: {metadata['type_line']}")
     print()
@@ -117,7 +119,7 @@ def main():
     if sol_ring:
         print(f"Finding cards similar to: {sol_ring.name}")
         similar = rag.search_similar_to_card(sol_ring, n_results=5)
-        for i, (card_id, similarity, metadata) in enumerate(similar, 1):
+        for i, (_card_id, similarity, metadata) in enumerate(similar, 1):
             print(f"  {i}. {metadata['name']} (similarity: {similarity:.3f})")
             print(f"     Type: {metadata['type_line']}")
     print()
@@ -132,7 +134,7 @@ def main():
     results = rag.search_similar("counter target spell", n_results=5)
     blue_results = [(cid, sim, meta) for cid, sim, meta in results if "U" in meta.get("color_identity", "")]
 
-    for i, (card_id, similarity, metadata) in enumerate(blue_results[:3], 1):
+    for i, (_card_id, similarity, metadata) in enumerate(blue_results[:3], 1):
         print(f"  {i}. {metadata['name']} (similarity: {similarity:.3f})")
         print(f"     Colors: {metadata.get('color_identity', 'N/A')}")
     print()

@@ -5,7 +5,7 @@ import time
 import urllib.parse
 import urllib.request
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .exceptions import CardNotFoundError, InvalidRequestError, RateLimitError, ScryfallError
 
@@ -24,7 +24,7 @@ class ScryfallClient:
 
     def __init__(self):
         """Initialize the Scryfall client."""
-        self._last_request_time: Optional[datetime] = None
+        self._last_request_time: datetime | None = None
         self._request_count = 0
 
     def _rate_limit(self):
@@ -37,7 +37,7 @@ class ScryfallClient:
         self._last_request_time = datetime.now()
         self._request_count += 1
 
-    def _make_request(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _make_request(self, endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Make a request to the Scryfall API.
 
         Args:
@@ -67,17 +67,17 @@ class ScryfallClient:
 
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                raise CardNotFoundError(f"Card not found: {url}")
+                raise CardNotFoundError(f"Card not found: {url}") from e
             if e.code == 429:
-                raise RateLimitError("Scryfall API rate limit exceeded")
+                raise RateLimitError("Scryfall API rate limit exceeded") from e
             if e.code == 400:
-                raise InvalidRequestError(f"Invalid request to Scryfall: {e.reason}")
-            raise ScryfallError(f"Scryfall API error {e.code}: {e.reason}")
+                raise InvalidRequestError(f"Invalid request to Scryfall: {e.reason}") from e
+            raise ScryfallError(f"Scryfall API error {e.code}: {e.reason}") from e
 
         except Exception as e:
-            raise ScryfallError(f"Failed to fetch from Scryfall: {e!s}")
+            raise ScryfallError(f"Failed to fetch from Scryfall: {e!s}") from e
 
-    def get_card_by_name(self, name: str, fuzzy: bool = False) -> Dict[str, Any]:
+    def get_card_by_name(self, name: str, fuzzy: bool = False) -> dict[str, Any]:
         """Get a card by its name.
 
         Args:
@@ -94,7 +94,7 @@ class ScryfallClient:
 
         return self._make_request(endpoint, params)
 
-    def get_card_by_id(self, card_id: str) -> Dict[str, Any]:
+    def get_card_by_id(self, card_id: str) -> dict[str, Any]:
         """Get a card by its Scryfall ID.
 
         Args:
@@ -113,7 +113,7 @@ class ScryfallClient:
         unique: str = "cards",
         order: str = "name",
         include_extras: bool = False,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search for cards using Scryfall search syntax.
 
         Args:
@@ -186,7 +186,7 @@ class ScryfallClient:
 
         raise ScryfallError(f"Bulk data type '{bulk_type}' not found")
 
-    def get_random_card(self, query: Optional[str] = None) -> Dict[str, Any]:
+    def get_random_card(self, query: str | None = None) -> dict[str, Any]:
         """Get a random card, optionally matching a search query.
 
         Args:
@@ -201,7 +201,7 @@ class ScryfallClient:
 
         return self._make_request(endpoint, params)
 
-    def get_card_rulings(self, card_id: str) -> List[Dict[str, Any]]:
+    def get_card_rulings(self, card_id: str) -> list[dict[str, Any]]:
         """Get rulings for a specific card.
 
         Args:
@@ -216,7 +216,7 @@ class ScryfallClient:
 
         return data.get("data", [])
 
-    def autocomplete(self, query: str, include_extras: bool = False) -> List[str]:
+    def autocomplete(self, query: str, include_extras: bool = False) -> list[str]:
         """Get card name autocomplete suggestions.
 
         Args:
@@ -236,7 +236,7 @@ class ScryfallClient:
         data = self._make_request(endpoint, params)
         return data.get("data", [])
 
-    def get_sets(self) -> List[Dict[str, Any]]:
+    def get_sets(self) -> list[dict[str, Any]]:
         """Get all MTG sets.
 
         Returns:
@@ -247,7 +247,7 @@ class ScryfallClient:
         data = self._make_request(endpoint)
         return data.get("data", [])
 
-    def get_request_stats(self) -> Dict[str, Any]:
+    def get_request_stats(self) -> dict[str, Any]:
         """Get statistics about requests made.
 
         Returns:
@@ -264,10 +264,10 @@ class ScryfallClient:
 
 
 def build_combo_search_query(
-    colors: Optional[List[str]] = None,
-    max_cmc: Optional[int] = None,
-    card_types: Optional[List[str]] = None,
-    keywords: Optional[List[str]] = None,
+    colors: list[str] | None = None,
+    max_cmc: int | None = None,
+    card_types: list[str] | None = None,
+    keywords: list[str] | None = None,
 ) -> str:
     """Build a Scryfall search query for finding combo pieces.
 

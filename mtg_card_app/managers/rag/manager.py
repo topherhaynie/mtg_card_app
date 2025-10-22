@@ -11,7 +11,7 @@ The manager is now decoupled from specific implementations:
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from mtg_card_app.domain.entities import Card
 from mtg_card_app.managers.rag.services.embedding import (
@@ -93,7 +93,7 @@ class RAGManager:
 
         return " | ".join(parts)
 
-    def _build_metadata(self, card: Card) -> Dict[str, Any]:
+    def _build_metadata(self, card: Card) -> dict[str, Any]:
         """Build metadata for a card embedding.
 
         Metadata is stored alongside embeddings and can be used for filtering.
@@ -163,7 +163,7 @@ class RAGManager:
             logger.error("Error embedding card %s: %s", card.name, e)
             return False
 
-    def embed_cards(self, cards: List[Card], batch_size: int = 32) -> Dict[str, int]:
+    def embed_cards(self, cards: list[Card], batch_size: int = 32) -> dict[str, int]:
         """Embed multiple cards in batches.
 
         Args:
@@ -219,8 +219,8 @@ class RAGManager:
         self,
         query: str,
         n_results: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Tuple[str, float, Dict[str, Any]]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[tuple[str, float, dict[str, Any]]]:
         """Search for cards similar to a text query.
 
         Args:
@@ -254,8 +254,8 @@ class RAGManager:
         self,
         card: Card,
         n_results: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Tuple[str, float, Dict[str, Any]]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[tuple[str, float, dict[str, Any]]]:
         """Find cards similar to a given card.
 
         Args:
@@ -273,7 +273,7 @@ class RAGManager:
         # Filter out the card itself
         return [(cid, score, meta) for cid, score, meta in results if cid != card.id]
 
-    def get_embedding(self, card_id: str) -> Optional[List[float]]:
+    def get_embedding(self, card_id: str) -> list[float] | None:
         """Get the embedding for a specific card.
 
         Args:
@@ -306,7 +306,7 @@ class RAGManager:
         """
         return self.vector_store.clear_all()
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about the RAG system.
 
         Returns:

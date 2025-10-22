@@ -3,7 +3,7 @@
 This defines the interface for any vector database that can store and search embeddings.
 """
 
-from typing import Any, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Protocol
 
 
 class VectorStoreService(Protocol):
@@ -16,8 +16,8 @@ class VectorStoreService(Protocol):
     def add_embedding(
         self,
         id: str,
-        embedding: List[float],
-        metadata: Dict[str, Any],
+        embedding: list[float],
+        metadata: dict[str, Any],
         document: str,
     ) -> bool:
         """Add a single embedding to the store.
@@ -36,10 +36,10 @@ class VectorStoreService(Protocol):
 
     def add_embeddings(
         self,
-        ids: List[str],
-        embeddings: List[List[float]],
-        metadatas: List[Dict[str, Any]],
-        documents: List[str],
+        ids: list[str],
+        embeddings: list[list[float]],
+        metadatas: list[dict[str, Any]],
+        documents: list[str],
     ) -> bool:
         """Add multiple embeddings in batch.
 
@@ -55,7 +55,7 @@ class VectorStoreService(Protocol):
         """
         ...
 
-    def get_embedding(self, id: str) -> Optional[List[float]]:
+    def get_embedding(self, id: str) -> list[float] | None:
         """Retrieve an embedding by ID.
 
         Args:
@@ -81,10 +81,10 @@ class VectorStoreService(Protocol):
 
     def search_similar(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         n_results: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Tuple[str, float, Dict[str, Any]]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[tuple[str, float, dict[str, Any]]]:
         """Search for similar embeddings.
 
         Args:
@@ -128,7 +128,7 @@ class VectorStoreService(Protocol):
         """
         ...
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about the vector store.
 
         Returns:

@@ -1,9 +1,9 @@
-"""Combo entity representing a card combination."""
+"""Combo entity for storing and managing card combinations."""
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ComboType(Enum):
@@ -30,51 +30,51 @@ class Combo:
     """
 
     # Core identifiers
-    id: Optional[str] = None  # UUID generated for storage
+    id: str | None = None  # UUID generated for storage
     name: str = ""
 
     # Cards in the combo
-    card_ids: List[str] = field(default_factory=list)  # Scryfall IDs
-    card_names: List[str] = field(default_factory=list)  # For quick reference
+    card_ids: list[str] = field(default_factory=list)  # Scryfall IDs
+    card_names: list[str] = field(default_factory=list)  # For quick reference
 
     # Combo characteristics
-    combo_types: List[ComboType] = field(default_factory=list)
+    combo_types: list[ComboType] = field(default_factory=list)
     description: str = ""  # How the combo works
-    steps: List[str] = field(default_factory=list)  # Step-by-step execution
+    steps: list[str] = field(default_factory=list)  # Step-by-step execution
 
     # Requirements and conditions
-    prerequisites: List[str] = field(default_factory=list)  # What needs to be in place
-    mana_required: Optional[str] = None  # Total mana needed to execute
-    colors_required: List[str] = field(default_factory=list)  # Color identity
+    prerequisites: list[str] = field(default_factory=list)  # What needs to be in place
+    mana_required: str | None = None  # Total mana needed to execute
+    colors_required: list[str] = field(default_factory=list)  # Color identity
 
     # Combo metrics
     card_count: int = 0  # Number of cards in combo
     complexity: str = "medium"  # low, medium, high
-    consistency: Optional[float] = None  # 0.0-1.0 how reliable it is
+    consistency: float | None = None  # 0.0-1.0 how reliable it is
 
     # Pricing
-    total_price_usd: Optional[float] = None
-    price_per_card: Dict[str, float] = field(default_factory=dict)  # {card_id: price}
+    total_price_usd: float | None = None
+    price_per_card: dict[str, float] = field(default_factory=dict)  # {card_id: price}
 
     # Format legality
-    legal_formats: List[str] = field(default_factory=list)
+    legal_formats: list[str] = field(default_factory=list)
 
     # Metadata
-    tags: List[str] = field(default_factory=list)  # searchable tags
-    popularity_score: Optional[float] = None  # How popular/well-known
-    competitive_viability: Optional[str] = None  # casual, fringe, tier2, tier1
+    tags: list[str] = field(default_factory=list)  # searchable tags
+    popularity_score: float | None = None  # How popular/well-known
+    competitive_viability: str | None = None  # casual, fringe, tier2, tier1
 
     # AI-generated insights
-    llm_analysis: Optional[str] = None  # LLM's analysis of the combo
-    weaknesses: List[str] = field(default_factory=list)  # What disrupts it
-    strengths: List[str] = field(default_factory=list)  # Why it's good
+    llm_analysis: str | None = None  # LLM's analysis of the combo
+    weaknesses: list[str] = field(default_factory=list)  # What disrupts it
+    strengths: list[str] = field(default_factory=list)  # Why it's good
 
     # Timestamps
-    discovered_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    discovered_at: datetime | None = None
+    updated_at: datetime | None = None
 
     # Raw data for reference
-    raw_data: Dict[str, Any] = field(default_factory=dict)
+    raw_data: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize computed fields."""
@@ -87,7 +87,7 @@ class Combo:
         if not self.updated_at:
             self.updated_at = datetime.now()
 
-    def calculate_total_price(self, card_prices: Dict[str, float]) -> float:
+    def calculate_total_price(self, card_prices: dict[str, float]) -> float:
         """Calculate total price of the combo.
 
         Args:
@@ -127,9 +127,9 @@ class Combo:
         }
         return any(ct in infinite_types for ct in self.combo_types)
 
-    def get_color_identity(self) -> List[str]:
+    def get_color_identity(self) -> list[str]:
         """Get the combined color identity of all cards."""
-        return sorted(list(set(self.colors_required)))
+        return sorted(set(self.colors_required))
 
     def add_card(self, card_id: str, card_name: str):
         """Add a card to the combo."""
@@ -139,7 +139,7 @@ class Combo:
             self.card_count = len(self.card_ids)
             self.updated_at = datetime.now()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert combo to dictionary representation."""
         return {
             "id": self.id,

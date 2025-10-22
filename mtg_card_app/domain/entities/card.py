@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -16,55 +16,55 @@ class Card:
     # Core identifiers
     id: str  # Scryfall ID
     name: str
-    oracle_id: Optional[str] = None
+    oracle_id: str | None = None
 
     # Card characteristics
-    mana_cost: Optional[str] = None
+    mana_cost: str | None = None
     cmc: float = 0.0  # Converted mana cost
     type_line: str = ""
-    oracle_text: Optional[str] = None
-    colors: List[str] = field(default_factory=list)
-    color_identity: List[str] = field(default_factory=list)
+    oracle_text: str | None = None
+    colors: list[str] = field(default_factory=list)
+    color_identity: list[str] = field(default_factory=list)
 
     # Card types for combo detection
-    supertypes: List[str] = field(default_factory=list)
-    card_types: List[str] = field(default_factory=list)
-    subtypes: List[str] = field(default_factory=list)
+    supertypes: list[str] = field(default_factory=list)
+    card_types: list[str] = field(default_factory=list)
+    subtypes: list[str] = field(default_factory=list)
 
     # Card abilities and mechanics
-    keywords: List[str] = field(default_factory=list)
-    produced_mana: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
+    produced_mana: list[str] = field(default_factory=list)
 
     # Power/Toughness for creatures
-    power: Optional[str] = None
-    toughness: Optional[str] = None
-    loyalty: Optional[str] = None
+    power: str | None = None
+    toughness: str | None = None
+    loyalty: str | None = None
 
     # Legality and formats
-    legalities: Dict[str, str] = field(default_factory=dict)
+    legalities: dict[str, str] = field(default_factory=dict)
 
     # Pricing information
-    prices: Dict[str, Optional[float]] = field(default_factory=dict)  # {currency: price}
+    prices: dict[str, float | None] = field(default_factory=dict)  # {currency: price}
 
     # Image and metadata
-    image_uris: Dict[str, str] = field(default_factory=dict)
+    image_uris: dict[str, str] = field(default_factory=dict)
     set_code: str = ""
     set_name: str = ""
     rarity: str = ""
 
     # Additional metadata
     reserved: bool = False
-    edhrec_rank: Optional[int] = None
+    edhrec_rank: int | None = None
 
     # Raw Scryfall data for reference
-    raw_data: Dict[str, Any] = field(default_factory=dict)
+    raw_data: dict[str, Any] = field(default_factory=dict)
 
     # Timestamps
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     @classmethod
-    def from_scryfall(cls, data: Dict[str, Any]) -> "Card":
+    def from_scryfall(cls, data: dict[str, Any]) -> "Card":
         """Create a Card instance from Scryfall API data.
 
         Args:
@@ -117,7 +117,7 @@ class Card:
         )
 
     @staticmethod
-    def _parse_type_line(type_line: str) -> tuple[List[str], List[str], List[str]]:
+    def _parse_type_line(type_line: str) -> tuple[list[str], list[str], list[str]]:
         """Parse the type line into supertypes, types, and subtypes.
 
         Example: "Legendary Creature — Human Wizard"
@@ -173,11 +173,11 @@ class Card:
         permanent_types = {"Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"}
         return any(t in self.card_types for t in permanent_types)
 
-    def get_primary_price(self) -> Optional[float]:
+    def get_primary_price(self) -> float | None:
         """Get the primary USD price (non-foil if available, otherwise foil)."""
         return self.prices.get("usd") or self.prices.get("usd_foil")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert card to dictionary representation."""
         return {
             "id": self.id,

@@ -3,7 +3,7 @@
 This defines the interface for any embedding model that can convert text to vectors.
 """
 
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 
 class EmbeddingService(Protocol):
@@ -13,7 +13,7 @@ class EmbeddingService(Protocol):
     (sentence-transformers, OpenAI, Cohere, etc.) without changing the RAG manager.
     """
 
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> list[float]:
         """Embed a single text string.
 
         Args:
@@ -25,7 +25,7 @@ class EmbeddingService(Protocol):
         """
         ...
 
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Embed multiple texts in batch.
 
         Args:
@@ -55,7 +55,7 @@ class EmbeddingService(Protocol):
         """
         ...
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about the embedding service.
 
         Returns:
