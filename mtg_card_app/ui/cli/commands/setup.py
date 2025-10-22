@@ -381,10 +381,26 @@ def _verify_data_files(config) -> None:
 
     if not all_exist:
         console.print("\n[yellow]⚠ Some data files are missing.[/yellow]")
-        console.print("[dim]The app will still work but may have limited functionality.[/dim]")
-        console.print("[dim]Run 'mtg update' to download card data.[/dim]")
+        console.print("\n[bold]Quick Setup Options:[/bold]")
+        console.print("1. Download pre-built data bundle (~78 MB, 2-minute setup)")
+        console.print("2. Build from scratch (download all cards, ~10 minutes)")
+        
+        choice = Prompt.ask(
+            "\n[bold]Choose setup method[/bold]",
+            choices=["1", "2"],
+            default="1",
+        )
+        
+        if choice == "1":
+            _download_and_extract_bundle(data_dir)
+        else:
+            console.print("\n[dim]Run 'mtg update' to download card data from Scryfall.[/dim]")
     else:
         console.print("\n[green]✓[/green] All data files present")
+        
+        # Offer to update to latest cards
+        if Confirm.ask("\n[bold]Update to latest cards?[/bold]", default=False):
+            _run_incremental_update(data_dir)
 
 
 def _test_configuration(config, factory) -> None:
@@ -431,3 +447,142 @@ def _test_configuration(config, factory) -> None:
             console.print("• Verify your API key is set correctly")
             console.print("• Check your internet connection")
             console.print("• Make sure you have API credits available")
+
+
+def _download_and_extract_bundle(data_dir: Path) -> None:
+    """Download and extract the pre-built data bundle.
+
+    Args:
+        data_dir: Directory where data should be extracted
+
+    """
+    import json
+    import tarfile
+    import tempfile
+
+    import requests
+    from rich.progress import BarColumn, DownloadColumn, Progress, SpinnerColumn, TimeRemainingColumn, TransferSpeedColumn
+
+    console.print("\n[bold cyan]📦 Downloading Data Bundle[/bold cyan]")
+
+    # GitHub release URL (this will need to be updated with actual release)
+    # For now, we'll use a placeholder - in production this would point to latest release
+    bundle_url = "https://github.com/topherhaynie/mtg_card_app/releases/latest/download/mtg-card-app-data-bundle-latest.tar.xz"
+
+    console.print(f"[dim]Source: {bundle_url}[/dim]")
+    console.print("[yellow]Note:[/yellow] Using latest release bundle. You may want to update after extraction.")
+
+    try:
+        # Create temporary directory for download
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            bundle_file = temp_path / "bundle.tar.xz"
+
+            # Download bundle with progress
+            console.print("\n[cyan]Downloading...[/cyan]")
+            with Progress(
+                SpinnerColumn(),
+                BarColumn(),
+                DownloadColumn(),
+                TransferSpeedColumn(),
+                TimeRemainingColumn(),
+                console=console,
+            ) as progress:
+                response = requests.get(bundle_url, stream=True, timeout=60)
+                response.raise_for_status()
+
+                total_size = int(response.headers.get("content-length", 0))
+                task = progress.add_task("Downloading bundle...", total=total_size)
+
+                with open(bundle_file, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                        progress.update(task, advance=len(chunk))
+
+            console.print("[green]✓[/green] Download complete")
+
+            # Extract bundle
+            console.print("\n[cyan]Extracting...[/cyan]")
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            with tarfile.open(bundle_file, "r:xz") as tar:
+                # Extract all files
+                tar.extractall(path=data_dir.parent, filter="data")
+
+            console.print("[green]✓[/green] Extraction complete")
+
+            # Read and display manifest
+            manifest_path = data_dir / "manifest.json"
+            if manifest_path.exists():
+                with open(manifest_path) as f:
+                    manifest = json.load(f)
+
+                console.print("\n[bold]Bundle Info:[/bold]")
+                console.print(f"  Version: [cyan]{manifest.get('version', 'unknown')}[/cyan]")
+                console.print(f"  Built: [cyan]{manifest.get('build_date', 'unknown')[:10]}[/cyan]")
+                console.print(f"  Cards: [cyan]{manifest.get('card_count', 0):,}[/cyan]")
+                console.print(f"  Embeddings: [cyan]{manifest.get('embedding_count', 0):,}[/cyan]")
+
+                # Offer incremental update
+                console.print("\n[green]✓[/green] Data bundle installed successfully!")
+
+                if Confirm.ask("\n[bold]Update to latest cards now?[/bold]", default=True):
+                    _run_incremental_update(data_dir, since_date=manifest.get("last_card_date"))
+
+    except requests.exceptions.RequestException as e:
+        console.print(f"\n[red]✗ Download failed:[/red] {e}")
+        console.print("\n[bold]Troubleshooting:[/bold]")
+        console.print("• Check your internet connection")
+        console.print("• The release may not exist yet - run 'mtg update' to build from scratch")
+        console.print("• Try again later")
+    except Exception as e:
+        console.print(f"\n[red]✗ Installation failed:[/red] {e}")
+        console.print("\n[bold]Fallback option:[/bold]")
+        console.print("  Run 'mtg update' to download cards from Scryfall")
+
+
+def _run_incremental_update(data_dir: Path, since_date: str | None = None) -> None:
+    """Run an incremental update to get the latest cards.
+
+    Args:
+        data_dir: Data directory
+        since_date: Optional date to update from (YYYY-MM-DD format)
+
+    """
+    import subprocess
+
+    console.print("\n[bold cyan]🔄 Running Incremental Update[/bold cyan]")
+
+    # Determine since date
+    if not since_date:
+        # Try to get from database
+        try:
+            from mtg_card_app.managers.db.manager import DatabaseManager
+
+            db_manager = DatabaseManager(data_dir=str(data_dir))
+            since_date = db_manager.card_service.get_last_update_date()
+        except Exception:
+            pass
+
+    if since_date:
+        console.print(f"[cyan]Updating cards since: {since_date}[/cyan]")
+        cmd = ["mtg", "update", "--since", since_date, "--cards-only"]
+    else:
+        console.print("[cyan]Running full update...[/cyan]")
+        cmd = ["mtg", "update"]
+
+    try:
+        # Run the update command
+        result = subprocess.run(cmd, capture_output=False, check=True)  # noqa: S603
+
+        if result.returncode == 0:
+            console.print("[green]✓[/green] Update complete!")
+        else:
+            console.print("[yellow]⚠[/yellow] Update completed with warnings")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]✗ Update failed:[/red] {e}")
+        console.print("\n[dim]You can run 'mtg update' manually later.[/dim]")
+    except FileNotFoundError:
+        console.print("[yellow]⚠[/yellow] Could not run update command")
+        console.print("[dim]Run 'mtg update' manually after setup completes.[/dim]")

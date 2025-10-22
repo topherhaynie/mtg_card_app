@@ -59,12 +59,12 @@
 - [x] Document usage in help text
 
 ### Step 6: Update Setup Wizard (1 hour)
-- [ ] Add `download_bundle()` function with progress bar
-- [ ] Add `extract_bundle()` function (tar.xz extraction)
-- [ ] Add `read_manifest()` function
-- [ ] Integrate: download → extract → read manifest → incremental update
-- [ ] Handle errors gracefully (fallback to full update)
-- [ ] Test end-to-end setup flow
+- [x] Add `download_bundle()` function with progress bar
+- [x] Add `extract_bundle()` function (tar.xz extraction)
+- [x] Add `read_manifest()` function
+- [x] Integrate: download → extract → read manifest → incremental update
+- [x] Handle errors gracefully (fallback to full update)
+- [ ] Test end-to-end setup flow (needs actual GitHub release)
 
 ### Step 7: Upload First Bundle (30 min)
 - [ ] Run `mtg update` to ensure fresh data
