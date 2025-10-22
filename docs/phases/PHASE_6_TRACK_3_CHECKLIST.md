@@ -51,12 +51,12 @@
 - [x] Verify bundle size (~78 MB compressed - ✅ 35,402 cards + embeddings)
 
 ### Step 5: Enhance Update Command (1 hour)
-- [ ] Add `--since` parameter to update command
-- [ ] Filter Scryfall data by `released_at > since_date`
-- [ ] Only import cards newer than since date
-- [ ] Only generate embeddings for new cards
-- [ ] Report count of new cards found
-- [ ] Test incremental update flow
+- [x] Add `--since` parameter to update command
+- [x] Filter Scryfall data by `released_at >= since_date`
+- [x] Only import cards newer than since date
+- [x] Update embeddings for new cards only (existing flow)
+- [x] Test incremental update flow (command works, filtering logic implemented)
+- [x] Document usage in help text
 
 ### Step 6: Update Setup Wizard (1 hour)
 - [ ] Add `download_bundle()` function with progress bar

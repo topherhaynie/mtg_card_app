@@ -17,17 +17,25 @@ console = Console()
 @click.option("--force", "-f", is_flag=True, help="Force re-download even if data exists")
 @click.option("--cards-only", is_flag=True, help="Only update card database (skip embeddings)")
 @click.option("--embeddings-only", is_flag=True, help="Only regenerate embeddings (skip card download)")
-def update(force: bool, cards_only: bool, embeddings_only: bool) -> None:
+@click.option(
+    "--since",
+    "-s",
+    type=str,
+    default=None,
+    help="Only download cards released since this date (YYYY-MM-DD). Enables incremental updates.",
+)
+def update(force: bool, cards_only: bool, embeddings_only: bool, since: str | None) -> None:
     """Update card database from Scryfall.
 
     Downloads the latest Oracle card data from Scryfall's bulk data API
     and optionally regenerates vector embeddings for semantic search.
 
     Examples:
-        mtg update                    # Full update (cards + embeddings)
-        mtg update --force            # Force re-download
-        mtg update --cards-only       # Skip embedding generation
-        mtg update --embeddings-only  # Only regenerate embeddings
+        mtg update                            # Full update (cards + embeddings)
+        mtg update --force                    # Force re-download
+        mtg update --cards-only               # Skip embedding generation
+        mtg update --embeddings-only          # Only regenerate embeddings
+        mtg update --since 2024-01-01         # Incremental: only cards since date
 
     """
     console.print(
@@ -50,7 +58,7 @@ def update(force: bool, cards_only: bool, embeddings_only: bool) -> None:
 
     # Update cards
     if not embeddings_only:
-        _update_cards(data_dir, force)
+        _update_cards(data_dir, force, since)
 
     # Update embeddings
     if not cards_only:
@@ -71,14 +79,23 @@ def update(force: bool, cards_only: bool, embeddings_only: bool) -> None:
     )
 
 
-def _update_cards(data_dir: Path, force: bool) -> None:
-    """Download and import card data from Scryfall."""
+def _update_cards(data_dir: Path, force: bool, since: str | None = None) -> None:
+    """Download and import card data from Scryfall.
+    
+    Args:
+        data_dir: Directory for data storage
+        force: Force re-download even if data exists
+        since: Only import cards released since this date (YYYY-MM-DD format)
+    
+    """
     console.print("\n[bold cyan]📦 Step 1: Card Database Update[/bold cyan]")
 
     cards_db = data_dir / "cards.db"
-
-    # Check if already exists
-    if cards_db.exists() and not force:
+    
+    # Incremental update mode
+    if since:
+        console.print(f"[cyan]🔄 Incremental update mode:[/cyan] Cards released since {since}")
+    elif cards_db.exists() and not force:
         console.print("[yellow]⚠[/yellow] Card database already exists")
         if not click.confirm("Re-download and replace?", default=False):
             console.print("[dim]Skipping card download[/dim]")
@@ -138,6 +155,24 @@ def _update_cards(data_dir: Path, force: bool) -> None:
             cards_data = json.loads(b"".join(chunks))
 
         console.print(f"📊 Processing {len(cards_data):,} cards...")
+        
+        # Filter cards by release date if --since is specified
+        if since:
+            original_count = len(cards_data)
+            cards_data = [
+                card
+                for card in cards_data
+                if card.get("released_at", "") >= since
+            ]
+            filtered_count = len(cards_data)
+            console.print(
+                f"[cyan]📅 Filtered to {filtered_count:,} cards[/cyan] "
+                f"(skipped {original_count - filtered_count:,} older cards)"
+            )
+            
+            if filtered_count == 0:
+                console.print("[yellow]⚠[/yellow] No new cards found since that date")
+                return
 
         # Import with progress bar
         with Progress(
