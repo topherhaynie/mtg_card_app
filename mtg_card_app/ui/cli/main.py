@@ -72,7 +72,7 @@ def stats() -> None:
 @cli.command()
 def setup() -> None:
     """Run initial setup wizard.
-    
+
     Interactive wizard to configure:
     - LLM provider selection
     - API key configuration
@@ -84,25 +84,20 @@ def setup() -> None:
     run_setup_wizard()
 
 
-@cli.command()
-def update() -> None:
-    """Update card database from Scryfall."""
-    console.print("[yellow]Update not yet implemented.[/yellow]")
-    console.print("Coming in Track 1 Phase 2!")
-
-
 # Import and register subcommands
 from .commands import card as card_cmd
 from .commands import combo as combo_cmd
 from .commands import config as config_cmd
 from .commands import deck as deck_cmd
 from .commands import search as search_cmd
+from .commands import update as update_cmd
 
 cli.add_command(card_cmd.card)
 cli.add_command(combo_cmd.combo)
 cli.add_command(config_cmd.config)
 cli.add_command(deck_cmd.deck)
 cli.add_command(search_cmd.search)
+cli.add_command(update_cmd.update)
 
 
 def main() -> None:
