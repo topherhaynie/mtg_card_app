@@ -87,7 +87,6 @@ ignore = [
     "N806",  # variable in function should be lowercase
     "UP006", # use-pep585-annotation (Optional[X] vs X | None)
     "UP007", # use-pep604-annotation (Union[X, Y] vs X | Y)
-    "UP035", # typing.Dict/List is deprecated (but still valid)
     "FBT001", # boolean-typed positional argument
     "FBT002", # boolean default positional argument
 ]
