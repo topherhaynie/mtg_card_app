@@ -1,9 +1,7 @@
 """Tests for the CLI setup command."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from mtg_card_app.ui.cli.commands.setup import run_setup_wizard
 
@@ -16,7 +14,11 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Confirm.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_wizard_basic_flow(
-        self, mock_print, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test the basic setup wizard flow."""
         # Setup mocks
@@ -53,7 +55,12 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Prompt.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_configures_ollama(
-        self, mock_print, mock_prompt, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_prompt,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test configuring Ollama provider."""
         # Setup mocks
@@ -80,16 +87,10 @@ class TestSetupCommand:
         run_setup_wizard()
 
         # Verify provider was set
-        assert any(
-            call[0] == ("llm.provider", "ollama")
-            for call in mock_config.set.call_args_list
-        )
+        assert any(call[0] == ("llm.provider", "ollama") for call in mock_config.set.call_args_list)
 
         # Verify model was set
-        assert any(
-            call[0] == ("llm.ollama.model", "llama3")
-            for call in mock_config.set.call_args_list
-        )
+        assert any(call[0] == ("llm.ollama.model", "llama3") for call in mock_config.set.call_args_list)
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
     @patch("mtg_card_app.ui.cli.commands.setup.ProviderFactory")
@@ -97,7 +98,12 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Prompt.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_configures_openai_with_env_var(
-        self, mock_print, mock_prompt, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_prompt,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test configuring OpenAI with environment variable."""
         # Setup mocks
@@ -130,16 +136,10 @@ class TestSetupCommand:
         run_setup_wizard()
 
         # Verify provider was set
-        assert any(
-            call[0] == ("llm.provider", "openai")
-            for call in mock_config.set.call_args_list
-        )
+        assert any(call[0] == ("llm.provider", "openai") for call in mock_config.set.call_args_list)
 
         # Verify API key with env var syntax
-        assert any(
-            call[0] == ("llm.openai.api_key", "${OPENAI_API_KEY}")
-            for call in mock_config.set.call_args_list
-        )
+        assert any(call[0] == ("llm.openai.api_key", "${OPENAI_API_KEY}") for call in mock_config.set.call_args_list)
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
     @patch("mtg_card_app.ui.cli.commands.setup.ProviderFactory")
@@ -147,7 +147,12 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Prompt.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_warns_unavailable_provider(
-        self, mock_print, mock_prompt, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_prompt,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test warning when choosing unavailable provider."""
         # Setup mocks
@@ -172,10 +177,7 @@ class TestSetupCommand:
         run_setup_wizard()
 
         # Verify warning was shown
-        assert any(
-            "not installed" in str(call).lower()
-            for call in mock_print.call_args_list
-        )
+        assert any("not installed" in str(call).lower() for call in mock_print.call_args_list)
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
     @patch("mtg_card_app.ui.cli.commands.setup.ProviderFactory")
@@ -183,7 +185,12 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Path")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_checks_data_files(
-        self, mock_print, mock_path_class, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_path_class,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test that setup checks for data files."""
         # Setup mocks
@@ -220,8 +227,7 @@ class TestSetupCommand:
 
         # Verify data files were checked
         assert any(
-            "data files" in str(call).lower() or "cards.db" in str(call).lower()
-            for call in mock_print.call_args_list
+            "data files" in str(call).lower() or "cards.db" in str(call).lower() for call in mock_print.call_args_list
         )
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
@@ -229,7 +235,11 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Confirm.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_tests_connection(
-        self, mock_print, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test that setup can test LLM connection."""
         # Setup mocks
@@ -263,17 +273,18 @@ class TestSetupCommand:
         mock_service.get_model_name.assert_called_once()
 
         # Verify success message
-        assert any(
-            "connected" in str(call).lower()
-            for call in mock_print.call_args_list
-        )
+        assert any("connected" in str(call).lower() for call in mock_print.call_args_list)
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
     @patch("mtg_card_app.ui.cli.commands.setup.ProviderFactory")
     @patch("mtg_card_app.ui.cli.commands.setup.Confirm.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_tests_generation(
-        self, mock_print, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test that setup can test LLM generation."""
         # Setup mocks
@@ -309,8 +320,7 @@ class TestSetupCommand:
 
         # Verify success message
         assert any(
-            "generation" in str(call).lower() or "successful" in str(call).lower()
-            for call in mock_print.call_args_list
+            "generation" in str(call).lower() or "successful" in str(call).lower() for call in mock_print.call_args_list
         )
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
@@ -318,7 +328,11 @@ class TestSetupCommand:
     @patch("mtg_card_app.ui.cli.commands.setup.Confirm.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_handles_connection_failure(
-        self, mock_print, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test handling of connection test failure."""
         # Setup mocks
@@ -349,17 +363,18 @@ class TestSetupCommand:
         )
 
         # Verify troubleshooting tips were shown
-        assert any(
-            "troubleshooting" in str(call).lower()
-            for call in mock_print.call_args_list
-        )
+        assert any("troubleshooting" in str(call).lower() for call in mock_print.call_args_list)
 
     @patch("mtg_card_app.ui.cli.commands.setup.get_config")
     @patch("mtg_card_app.ui.cli.commands.setup.ProviderFactory")
     @patch("mtg_card_app.ui.cli.commands.setup.Confirm.ask")
     @patch("mtg_card_app.ui.cli.commands.setup.console.print")
     def test_setup_shows_completion_message(
-        self, mock_print, mock_confirm, mock_factory_class, mock_get_config
+        self,
+        mock_print,
+        mock_confirm,
+        mock_factory_class,
+        mock_get_config,
     ):
         """Test that setup shows completion message."""
         # Setup mocks

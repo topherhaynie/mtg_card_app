@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 from mtg_card_app.ui.cli.commands.stats import show_stats
-
-if TYPE_CHECKING:
-    pass
 
 
 class TestStatsCommand:
@@ -57,7 +53,7 @@ class TestStatsCommand:
                 "provider": "ollama",
                 "model": "llama3",
                 "status": "connected",
-            }
+            },
         }
 
         with patch(
@@ -76,7 +72,7 @@ class TestStatsCommand:
         mock_interactor.get_system_stats.return_value = {
             "card_data": {
                 "total_cards": 35402,
-            }
+            },
         }
 
         with patch(

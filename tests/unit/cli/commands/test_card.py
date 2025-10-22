@@ -17,7 +17,9 @@ class TestCardCommand:
     """Test suite for the card command."""
 
     def test_card_default_format(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with default (rich) format.
 
@@ -38,7 +40,9 @@ class TestCardCommand:
         mock_interactor.fetch_card.assert_called_once_with("Lightning Bolt")
 
     def test_card_text_format(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with text format.
 
@@ -59,7 +63,9 @@ class TestCardCommand:
         assert "\x1b[" not in result.output
 
     def test_card_json_format(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with JSON format.
 
@@ -80,7 +86,9 @@ class TestCardCommand:
         assert '"name"' in result.output or "'name'" in result.output
 
     def test_card_not_found(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with non-existent card.
 
@@ -114,7 +122,9 @@ class TestCardCommand:
         assert "Usage:" in result.output or "Error:" in result.output
 
     def test_card_interactor_called_correctly(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test that Interactor is called with correct arguments.
 
@@ -135,7 +145,9 @@ class TestCardCommand:
         mock_interactor.fetch_card.assert_called_once_with(card_name)
 
     def test_card_multi_word_name(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with multi-word card name.
 
@@ -153,7 +165,7 @@ class TestCardCommand:
         mock_card.power = "1"
         mock_card.toughness = "3"
         mock_card.price_usd = "15.00"
-        
+
         mock_interactor.fetch_card.return_value = mock_card
 
         with patch(
@@ -167,7 +179,9 @@ class TestCardCommand:
         mock_interactor.fetch_card.assert_called_once_with("Thassa's Oracle")
 
     def test_card_special_characters(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with special characters in name.
 
@@ -177,17 +191,19 @@ class TestCardCommand:
 
         """
         card_name = "Jötun Grunt"
-        
+
         # Create a mock card object
         mock_card = Mock()
         mock_card.name = card_name
         mock_card.mana_cost = "{1}{W}"
         mock_card.type_line = "Creature — Giant Soldier"
-        mock_card.oracle_text = "Cumulative upkeep—Put two cards from a single graveyard on the bottom of their owner's library."
+        mock_card.oracle_text = (
+            "Cumulative upkeep—Put two cards from a single graveyard on the bottom of their owner's library."
+        )
         mock_card.power = "4"
         mock_card.toughness = "4"
         mock_card.price_usd = "0.50"
-        
+
         mock_interactor.fetch_card.return_value = mock_card
 
         with patch(
@@ -239,7 +255,10 @@ class TestCardCommandOutputFormats:
         }
 
     def test_rich_format_shows_all_fields(
-        self, cli_runner: CliRunner, mock_interactor: Mock, rich_card_data: dict
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
+        rich_card_data: dict,
     ) -> None:
         """Test that rich format displays all card fields.
 
@@ -253,7 +272,7 @@ class TestCardCommandOutputFormats:
         mock_card = Mock()
         for key, value in rich_card_data.items():
             setattr(mock_card, key, value)
-        
+
         mock_interactor.fetch_card.return_value = mock_card
 
         with patch(
@@ -274,7 +293,9 @@ class TestCardCommandOutputFormats:
         assert "Alpha" in output or "lea" in output
 
     def test_text_format_machine_readable(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test that text format is machine-readable (no ANSI).
 
@@ -297,7 +318,9 @@ class TestCardCommandOutputFormats:
         assert "Lightning Bolt" in result.output
 
     def test_json_format_parseable(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test that JSON format is valid and parseable.
 
@@ -341,7 +364,9 @@ class TestCardCommandEdgeCases:
         assert "Error:" in result.output or "not found" in result.output.lower()
 
     def test_very_long_card_name(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command with extremely long card name.
 
@@ -370,7 +395,8 @@ class TestCardCommandEdgeCases:
 
         """
         result = cli_runner.invoke(
-            card, ["Lightning Bolt", "--format", "invalid"]
+            card,
+            ["Lightning Bolt", "--format", "invalid"],
         )
 
         # Click should reject invalid choice
@@ -378,7 +404,9 @@ class TestCardCommandEdgeCases:
         assert "invalid" in result.output.lower() or "choice" in result.output.lower()
 
     def test_interactor_exception(
-        self, cli_runner: CliRunner, mock_interactor: Mock
+        self,
+        cli_runner: CliRunner,
+        mock_interactor: Mock,
     ) -> None:
         """Test card command when Interactor raises exception.
 

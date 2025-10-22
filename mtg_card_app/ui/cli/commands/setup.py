@@ -1,10 +1,8 @@
 """Setup wizard - Interactive first-time setup."""
 
 import os
-import sys
 from pathlib import Path
 
-import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
@@ -25,11 +23,13 @@ def run_setup_wizard() -> None:
     4. Verifying data files
 
     """
-    console.print(Panel.fit(
-        "[bold cyan]🎴 MTG Card App - Setup Wizard[/bold cyan]\n\n"
-        "This wizard will help you configure the app for first use.",
-        border_style="cyan",
-    ))
+    console.print(
+        Panel.fit(
+            "[bold cyan]🎴 MTG Card App - Setup Wizard[/bold cyan]\n\n"
+            "This wizard will help you configure the app for first use.",
+            border_style="cyan",
+        )
+    )
 
     config = get_config()
     factory = ProviderFactory(config)
@@ -50,17 +50,19 @@ def run_setup_wizard() -> None:
         _test_configuration(config, factory)
 
     # Final summary
-    console.print(Panel.fit(
-        "[green]✓[/green] Setup complete!\n\n"
-        "You're ready to use MTG Card App.\n\n"
-        "[bold]Try these commands:[/bold]\n"
-        "  mtg                    # Start chat mode\n"
-        "  mtg search \"Lightning Bolt\"\n"
-        "  mtg combo find \"Thoracle\"\n"
-        "  mtg stats              # View system info",
-        border_style="green",
-        title="🎉 All Set!",
-    ))
+    console.print(
+        Panel.fit(
+            "[green]✓[/green] Setup complete!\n\n"
+            "You're ready to use MTG Card App.\n\n"
+            "[bold]Try these commands:[/bold]\n"
+            "  mtg                    # Start chat mode\n"
+            '  mtg search "Lightning Bolt"\n'
+            '  mtg combo find "Thoracle"\n'
+            "  mtg stats              # View system info",
+            border_style="green",
+            title="🎉 All Set!",
+        )
+    )
 
 
 def _show_welcome_status(config, factory) -> None:
@@ -426,6 +428,6 @@ def _test_configuration(config, factory) -> None:
             console.print("• Make sure Ollama is running: [bold]ollama serve[/bold]")
             console.print("• Check if the model is pulled: [bold]ollama pull llama3[/bold]")
         else:
-            console.print(f"• Verify your API key is set correctly")
-            console.print(f"• Check your internet connection")
-            console.print(f"• Make sure you have API credits available")
+            console.print("• Verify your API key is set correctly")
+            console.print("• Check your internet connection")
+            console.print("• Make sure you have API credits available")

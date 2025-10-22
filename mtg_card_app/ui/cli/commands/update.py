@@ -30,11 +30,13 @@ def update(force: bool, cards_only: bool, embeddings_only: bool) -> None:
         mtg update --embeddings-only  # Only regenerate embeddings
 
     """
-    console.print(Panel.fit(
-        "[bold cyan]📥 MTG Card App - Data Update[/bold cyan]\n\n"
-        "This will download the latest card data from Scryfall.",
-        border_style="cyan",
-    ))
+    console.print(
+        Panel.fit(
+            "[bold cyan]📥 MTG Card App - Data Update[/bold cyan]\n\n"
+            "This will download the latest card data from Scryfall.",
+            border_style="cyan",
+        )
+    )
 
     # Validate options
     if cards_only and embeddings_only:
@@ -55,16 +57,18 @@ def update(force: bool, cards_only: bool, embeddings_only: bool) -> None:
         _update_embeddings(force)
 
     # Final summary
-    console.print(Panel.fit(
-        "[green]✓[/green] Update complete!\n\n"
-        "Your card database is up to date.\n\n"
-        "[bold]Next steps:[/bold]\n"
-        "  mtg stats              # View updated statistics\n"
-        "  mtg search \"blue\"      # Try searching cards\n"
-        "  mtg                    # Start chat mode",
-        border_style="green",
-        title="🎉 Success",
-    ))
+    console.print(
+        Panel.fit(
+            "[green]✓[/green] Update complete!\n\n"
+            "Your card database is up to date.\n\n"
+            "[bold]Next steps:[/bold]\n"
+            "  mtg stats              # View updated statistics\n"
+            '  mtg search "blue"      # Try searching cards\n'
+            "  mtg                    # Start chat mode",
+            border_style="green",
+            title="🎉 Success",
+        )
+    )
 
 
 def _update_cards(data_dir: Path, force: bool) -> None:
@@ -86,9 +90,9 @@ def _update_cards(data_dir: Path, force: bool) -> None:
 
         # Import inline for better progress tracking
         import json
+
         import requests
-        from pathlib import Path as ScriptPath
-        from rich.progress import BarColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn
+        from rich.progress import BarColumn, DownloadColumn, TimeRemainingColumn, TransferSpeedColumn
 
         registry = ManagerRegistry.get_instance()
         card_service = registry.card_data_manager._service
@@ -148,7 +152,7 @@ def _update_cards(data_dir: Path, force: bool) -> None:
 
             batch_size = 500
             for i in range(0, len(cards_data), batch_size):
-                batch = cards_data[i:i + batch_size]
+                batch = cards_data[i : i + batch_size]
                 card_service.bulk_insert(batch)
                 progress.update(task, advance=len(batch))
 
@@ -207,20 +211,23 @@ def _update_embeddings(force: bool) -> None:
             # Batch process cards
             batch_size = 100
             for i in range(0, total_cards, batch_size):
-                batch = all_cards[i:i + batch_size]
+                batch = all_cards[i : i + batch_size]
 
                 # Add to RAG (will embed and store)
                 for card in batch:
                     rag_manager.add_card(card)
 
-                progress.update(task, completed=min(i + batch_size, total_cards),
-                               description=f"Vectorizing {min(i + batch_size, total_cards)}/{total_cards} cards...")
+                progress.update(
+                    task,
+                    completed=min(i + batch_size, total_cards),
+                    description=f"Vectorizing {min(i + batch_size, total_cards)}/{total_cards} cards...",
+                )
 
         # Verify
         stats = rag_manager.get_stats()
         final_count = stats.get("total_documents", 0)
 
-        console.print(f"[green]✓[/green] Vector embeddings generated")
+        console.print("[green]✓[/green] Vector embeddings generated")
         console.print(f"  Total vectors: [bold]{final_count:,}[/bold]")
 
     except Exception as e:

@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock
 
 import pytest
 from click.testing import CliRunner
-
-if TYPE_CHECKING:
-    from mtg_card_app.core.interactor import Interactor
 
 
 @pytest.fixture
@@ -34,11 +30,21 @@ def mock_interactor() -> Mock:
     mock = Mock()
 
     # Create a mock Card object with spec to limit attributes
-    mock_card = Mock(spec=[
-        'name', 'mana_cost', 'type_line', 'oracle_text', 
-        'power', 'toughness', 'loyalty', 'price_usd', 
-        'set_name', 'rarity', 'artist'
-    ])
+    mock_card = Mock(
+        spec=[
+            "name",
+            "mana_cost",
+            "type_line",
+            "oracle_text",
+            "power",
+            "toughness",
+            "loyalty",
+            "price_usd",
+            "set_name",
+            "rarity",
+            "artist",
+        ]
+    )
     mock_card.name = "Lightning Bolt"
     mock_card.mana_cost = "{R}"
     mock_card.type_line = "Instant"
@@ -85,7 +91,7 @@ def mock_interactor() -> Mock:
             ],
             "power_level": 10,
             "estimated_price": 25.00,
-        }
+        },
     ]
 
     mock.search_combos.return_value = [
@@ -94,7 +100,7 @@ def mock_interactor() -> Mock:
             "cards": ["Isochron Scepter", "Dramatic Reversal"],
             "colors": ["U"],
             "description": "Infinite mana with artifacts/creatures",
-        }
+        },
     ]
 
     # Deck operations
