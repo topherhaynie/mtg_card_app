@@ -63,12 +63,31 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 - ✅ Connection failure handling
 - ✅ Completion message
 
-## Commands Remaining 📋
+### 6. `combo` Command (17 tests) ✅
+**File**: `tests/unit/cli/commands/test_combo.py`
+- ✅ Find subcommand (4 tests)
+  * Basic find functionality
+  * Custom limit option
+  * No results handling
+  * Exception handling
+- ✅ Search subcommand (3 tests)
+  * Basic search functionality
+  * No results with suggestion
+  * Exception handling
+- ✅ Budget subcommand (4 tests)
+  * Basic budget search
+  * Custom limit with slicing
+  * No results handling
+  * Exception handling
+- ✅ Create subcommand (6 tests)
+  * Basic combo creation
+  * Custom name
+  * Custom description
+  * Default name generation
+  * Multiple cards support
+  * Exception handling
 
-### 6. `combo` Command
-**File**: `mtg_card_app/ui/cli/commands/combo.py`
-**Subcommands**: find, search, add, remove
-**Estimated Tests**: ~12-15
+## Commands Remaining 📋
 
 ### 7. `deck` Command
 **File**: `mtg_card_app/ui/cli/commands/deck.py`
@@ -83,10 +102,10 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 ## Test Statistics
 
 ### Current Status
-- **Total Tests**: 45
-- **Passing**: 45 ✅
+- **Total Tests**: 62
+- **Passing**: 62 ✅
 - **Failing**: 0
-- **Commands Tested**: 5 / 8 (62.5%)
+- **Commands Tested**: 6 / 8 (75%)
 - **Estimated Total Tests**: ~95-105
 
 ### Coverage
@@ -97,7 +116,7 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 | stats   | 5     | ✅ Complete |
 | update  | 8     | ✅ Complete |
 | setup   | 9     | ✅ Complete |
-| combo   | 0     | 📋 Pending |
+| combo   | 17    | ✅ Complete |
 | deck    | 0     | 📋 Pending |
 | config  | 0     | 📋 Pending |
 
@@ -124,12 +143,19 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 - **Time**: ~2 hours
 - **Success Rate**: 100%
 
+### ✅ Phase 2: Combo Command (Partial)
+- **Tests Added**: 17 tests
+- **Total Tests**: 62
+- **Commands**: combo (all 4 subcommands)
+- **Time**: ~1.5 hours
+- **Success Rate**: 100%
+
 ## Next Steps
 
-1. **Phase 2: Combo & Partial Deck** - Create test_combo.py and partial test_deck.py
-2. **Phase 3: Complete Deck & Config** - Finish test_deck.py and create test_config.py
-3. **Phase 4: Polish** - Coverage report, edge cases, documentation
-4. **Estimated Remaining**: ~7-11 hours
+1. **Phase 2 Continuation: Deck Command (Partial)** - Create partial test_deck.py with build/validate/analyze (~10-12 tests)
+2. **Phase 3: Complete Deck & Config** - Finish test_deck.py and create test_config.py (~30-35 tests)
+3. **Phase 4: Polish** - Coverage report, edge cases, documentation (~5-10 tests)
+4. **Estimated Remaining**: ~5-9 hours
 
 ## Notes
 
