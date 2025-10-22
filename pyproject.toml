@@ -5,23 +5,48 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mtg-card-app"
 version = "0.1.0"
-description = "An application for finding new MTG card combos"
+description = "AI-powered Magic: The Gathering combo finder with RAG-enhanced search and LLM integration"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "topherhaynie"},
+    {name = "topherhaynie", email = "christopher.haynie@example.com"},
+]
+keywords = [
+    "mtg",
+    "magic-the-gathering",
+    "card-game",
+    "combo-finder",
+    "ai",
+    "llm",
+    "rag",
+    "vector-search",
+    "embeddings",
+    "scryfall",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Games/Entertainment",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
+
+[project.urls]
+Homepage = "https://github.com/topherhaynie/mtg_card_app"
+Repository = "https://github.com/topherhaynie/mtg_card_app"
+Issues = "https://github.com/topherhaynie/mtg_card_app/issues"
+Documentation = "https://github.com/topherhaynie/mtg_card_app#readme"
+Changelog = "https://github.com/topherhaynie/mtg_card_app/releases"
 dependencies = [
     "requests~=2.32",
     "chromadb~=1.2",

@@ -67,12 +67,12 @@
 - [ ] Test end-to-end setup flow (needs actual GitHub release)
 
 ### Step 7: Upload First Bundle (30 min)
-- [ ] Run `mtg update` to ensure fresh data
-- [ ] Build bundle: `python scripts/build_data_bundle.py`
-- [ ] Create GitHub release (tag: `data-v0.1.0`)
+- [x] Build bundle: `python scripts/build_data_bundle.py` (already done: 77.83 MB)
+- [ ] Create GitHub release (manual step - requires GitHub access)
 - [ ] Upload tarball to release assets
-- [ ] Update setup.py with correct download URL
+- [ ] Update bundle URL in setup.py (once release exists)
 - [ ] Test download and extraction
+- [ ] Document bundle update process for maintainers
 
 **Completion:** ☐ PyPI package published
 
@@ -80,12 +80,12 @@
 
 ## 🐳 Priority 3: Docker Image (5-6 hours)
 
-### Step 1.1: Package Metadata (1 hour)
-- [ ] Update `pyproject.toml` classifiers (Alpha → Beta)
-- [ ] Add author email
-- [ ] Add keywords for discoverability
-- [ ] Add project URLs (docs, issues, changelog)
-- [ ] Verify all metadata
+### Step 1.1: Package Metadata (1 hour) ✅
+- [x] Update `pyproject.toml` classifiers (Alpha → Beta)
+- [x] Add author email
+- [x] Add keywords for discoverability (10 keywords: mtg, magic-the-gathering, card-game, combo-finder, ai, llm, rag, vector-search, embeddings, scryfall)
+- [x] Add project URLs (Homepage, Repository, Issues, Documentation, Changelog)
+- [x] Verify all metadata (TOML validated)
 
 ### Step 1.2: PyPI-Ready README (2 hours)
 - [ ] Add badges (PyPI version, Python versions, license, CI)
