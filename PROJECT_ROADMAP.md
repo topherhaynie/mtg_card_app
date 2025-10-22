@@ -20,8 +20,8 @@ Build an intelligent MTG assistant that combines semantic search, LLM reasoning,
 | 3 | LLM Integration | ✅ Complete | Natural language processing, combo analysis |
 | 4 | MCP Interface | ✅ Complete | Model Context Protocol server |
 | 5 | Deck Builder | ✅ Complete | AI-powered deck construction with combo detection |
-| 6 | User Interfaces | ⏳ Future | CLI, TUI, and App interfaces |
-| 7 | Distribution & Installation | ⏳ Future | Multi-platform install: Docker, native, pip |
+| 6 | CLI & Infrastructure | 📋 Planning | Conversational CLI, LLM providers, Installation |
+| 7 | Web UI | 📋 Future | Local web interface with chat + quick actions |
 
 ---
 
@@ -251,111 +251,184 @@ For a concise status, see `PHASE_4_STATUS.md`.
 
 ---
 
-## ⏳ Phase 6: User Interfaces
+## 📋 Phase 6: CLI Interface & Infrastructure
 
-**Goal:** Provide accessible interfaces for different use cases
+**Goal:** Conversational CLI with LLM provider flexibility and easy installation
 
-### 6.1: CLI Interface (Command Line)
+For detailed planning, see `docs/phases/PHASE_6_PLAN_V2.md`.
 
+### Overview
 
-#### Planned Features
-- **Interactive Mode**
-  - REPL-style query interface
-  - Command history
-  - Colorized output
-  
-- **Commands**
-  ```bash
-  mtg query "blue counterspells under $5"
-  mtg combo "Isochron Scepter"
-  mtg search "Lightning Bolt"
-  mtg deck build --commander "Muldrotha" --budget 200
-  ```
+**Primary Interface:** Conversational chat mode (like talking to Claude)  
+**Secondary Interface:** Direct commands for power users/scripting  
+**LLM Providers:** Ollama, OpenAI, Anthropic, Gemini, Groq  
+**Installation:** Docker (instant), pip/pipx (5 min), native packages (5 min)
 
-- **Configuration**
-  - User preferences file
-  - Default filters
-  - API key management
+### Three Parallel Development Tracks
 
-- **Output Formats**
-  - Human-readable (default)
-  - JSON (for scripting)
-  - Markdown (for documentation)
-- Add `mtg_card_app/ui/cli/` module
-- Entry point: `mtg` command
-- [ ] Help system is comprehensive
-- [ ] Scriptable for automation
-- [ ] Cross-platform (Mac, Linux, Windows)
-**Estimated Timeline:** 3-5 days
+**Track 1: CLI Interface (Week 1-2)**
+- Interactive chat mode (REPL with streaming responses)
+- Direct commands (search, combo, deck, config, system)
+- Rich terminal formatting (colors, tables, progress bars)
+- Multiple output formats (human, JSON, markdown)
 
----
+**Track 2: LLM Provider Abstraction (Week 1-2)**
+- Support 5+ providers (Ollama, OpenAI, Anthropic, Gemini, Groq)
+- Provider protocol for easy extension
+- Configuration system (`~/.mtg/config.toml`)
+- Free tier options (Ollama local, Gemini, Groq)
 
-### 6.2: App Interface (GUI/Web)
+**Track 3: Installation & Setup (Week 2-3)**
+- Pre-computed data bundle (~100 MB: SQLite + ChromaDB embeddings)
+- Docker image with everything pre-installed
+- pip/pipx package with setup wizard
+- Native installers (.dmg, .deb, .rpm, .exe)
+- Incremental updates for new cards
 
-**Goal:** Visual, user-friendly interface for casual users
+### Key Features
 
-- **Deployment:** Local (http://localhost:3000) or hosted
-- **Pros:** Rich UI, familiar tech stack, easy sharing
-- **Integration:** Direct Python backend or REST API
-- **Pros:** Native feel, offline-first, easy distribution
-- **Integration:** Direct Interactor calls
-- **Pros:** Simple architecture, no JS needed, fast
-- **Integration:** Direct Interactor calls
-- **Pros:** Fast, works over SSH, lightweight
-- **Cons:** Limited UI capabilities, ASCII-only
+**Conversational Mode:**
+```bash
+$ mtg
+> show me blue counterspells under $5
+> what combos work with Thoracle?
+> build a Muldrotha deck with $200 budget
+```
 
-#### Planned Features (Regardless of Tech Choice)
+**Direct Commands:**
+```bash
+mtg search "Lightning Bolt"
+mtg combo find "Isochron Scepter" --limit 5
+mtg deck build --commander "Muldrotha" --budget 200
+mtg deck suggest my_deck.txt --theme "graveyard" --explain-combos
+mtg config set llm.provider openai
+mtg stats
+```
 
-**Core Views:**
-1. **Search Interface**
-   - Natural language query input
-   - Filter sidebar (colors, CMC, types, price)
-   - Card results grid/list
-   - Card detail modal
-   - Comparison mode
+**Setup Wizard:**
+```bash
+mtg setup
+# 1. Download pre-computed data (100 MB)
+# 2. Choose LLM provider (Ollama, OpenAI, etc.)
+# 3. Test connection
+# ✓ Ready to use in 2-5 minutes
+```
 
-2. **Combo Explorer**
-   - Card name input
-   - Visual combo graph
-   - Synergy explanations
-   - Power level indicators
-   - "Add to deck" button
+### Success Criteria
+- [ ] ✅ Conversational chat works smoothly
+- [ ] ✅ All Interactor methods exposed via CLI
+- [ ] ✅ Multiple LLM providers working
+- [ ] ✅ Installation <5 minutes
+- [ ] ✅ Beautiful, colorized output
+- [ ] ✅ Comprehensive help text
+- [ ] ✅ Cross-platform (macOS, Linux, Windows)
 
-3. **Deck Builder**
-   - Deck editor with sections (Commander, Creatures, etc.)
-   - Visual mana curve
-   - Budget tracker
-   - Synergy heatmap
-   - Export to various formats (Arena, MTGO, PDF)
-
-4. **Collection Manager** (Stretch)
-   - Track owned cards
-   - Value tracking
-   - Want list
-- Fast, fluid interactions
-- Accessible (keyboard nav, screen readers)
-- [ ] Responsive design (if web)
-- [ ] Performance: <100ms interaction time
-- [ ] User testing with 3+ people
-**Estimated Timeline:** 2-4 weeks (depending on tech choice)
+**Estimated Timeline:** 2-3 weeks
 
 ---
 
-## Architectural Flow (Final State)
+## 📋 Phase 7: Web UI
+
+**Goal:** Local web interface mirroring CLI's conversational-first design
+
+For detailed planning, see `docs/phases/PHASE_7_PLAN.md`.
+
+### Overview
+
+**Primary Interface:** Chat interface (like Claude web UI)  
+**Secondary Interface:** Quick action buttons  
+**Hosting:** Local-only at `localhost:3000` or `mtg.local:3000`  
+**Tech Stack:** FastAPI backend + React frontend + Tailwind + shadcn/ui
+
+### Core Features
+
+**Chat Interface:**
+- Text input with streaming LLM responses
+- Conversation history
+- Inline card previews with action buttons
+- Markdown rendering
+
+**Quick Action Buttons:**
+- Search Cards
+- Find Combos
+- Build Deck
+- Analyze Deck
+- System Stats
+
+**Card Display:**
+- Grid/list views
+- Detail modal
+- Lazy-loaded images
+- Add to deck, find combos
+
+**Deck Builder:**
+- Drag-and-drop editor
+- Visual mana curve
+- Budget tracker
+- AI-powered suggestions
+- Export to moxfield/arena/json
+
+**Settings Panel:**
+- LLM provider selection
+- API key management
+- Light/dark theme
+- Cache settings
+
+### Implementation
+
+**Backend (FastAPI):**
+- REST API for cards, combos, decks
+- WebSocket for streaming chat
+- Wraps existing Interactor
+
+**Frontend (React):**
+- Vite + TypeScript
+- Tailwind CSS + shadcn/ui components
+- Responsive design (mobile/tablet/desktop)
+
+**Startup:**
+```bash
+mtg web
+# Opens http://localhost:3000 in browser
+# Backend runs on http://localhost:8000 (proxied)
+```
+
+### Success Criteria
+- [ ] ✅ Chat interface works smoothly
+- [ ] ✅ Streaming responses feel instant
+- [ ] ✅ All Interactor methods accessible
+- [ ] ✅ Beautiful card display
+- [ ] ✅ Intuitive deck builder
+- [ ] ✅ Responsive on all devices
+- [ ] ✅ Dark mode support
+- [ ] ✅ <100ms UI interactions
+
+**Estimated Timeline:** 3-4 weeks
+
+---
+
+## Architectural Flow (Phase 7 Complete)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    User Interfaces                      │
-│  ┌──────────┐  ┌──────────┐  ┌─────────────────────┐  │
-│  │   CLI    │  │ MCP API  │  │   App (Web/Desktop) │  │
-│  └────┬─────┘  └────┬─────┘  └──────────┬──────────┘  │
-└───────┼─────────────┼────────────────────┼─────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      User Interfaces                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────────┐  │
+│  │   CLI    │  │ MCP API  │  │  Web UI (localhost:3000)     │  │
+│  │  (Chat+  │  │ (Claude) │  │  • Chat Interface            │  │
+│  │Commands) │  │          │  │  • Quick Actions             │  │
+│  └────┬─────┘  └────┬─────┘  │  • Deck Builder              │  │
+│       │             │         └──────────┬───────────────────┘  │
+└───────┼─────────────┼────────────────────┼──────────────────────┘
         │             │                    │
         └─────────────┼────────────────────┘
                       │
         ┌─────────────▼─────────────┐
         │      Interactor           │
         │  (Business Logic Layer)   │
+        │  • Card Operations        │
+        │  • Combo Operations       │
+        │  • Deck Operations        │
+        │  • Query Orchestration    │
         └─────────────┬─────────────┘
                       │
         ┌─────────────▼─────────────┐
@@ -366,11 +439,15 @@ For a concise status, see `PHASE_4_STATUS.md`.
         ┌─────────────▼─────────────┐
         │   DependencyManager       │
         │  (Service Container)      │
-        └──┬────────┬────────┬─────┬┘
-           │        │        │     │
-    ┌──────▼──┐ ┌──▼───┐ ┌──▼──┐ ┌▼────┐
-    │CardData │ │ RAG  │ │ LLM │ │Cache│
-    │Service  │ │Manager│ │Mgr  │ │     │
+        └──┬─────┬──────┬──────┬───┬┘
+           │     │      │      │   │
+    ┌──────▼─┐ ┌─▼───┐ ┌▼───┐ ┌▼──▼┐
+    │CardData│ │ RAG │ │LLM │ │Deck│
+    │Manager │ │ Mgr │ │Mgr │ │Mgr │
+    │        │ │     │ │    │ │    │
+    │SQLite  │ │Chroma│ │Multi│ │   │
+    │35k cards│ │DB  │ │Prov│ │   │
+    └────────┘ └─────┘ └────┘ └────┘
 ```
 
 ---
@@ -381,23 +458,36 @@ For a concise status, see `PHASE_4_STATUS.md`.
 - **Tool registration** (query, combo, search)
 - **Conversation context management**
 
-### 🔮 Future (Phases 5-6)
-
-
-### Phase 5: Deck Builder
-- TUI (Textual, optional)
-- App interface (technology TBD: Web, Desktop, or Native)
-- Maintain all three options for maximum versatility
-- Automate builds and releases where possible
-
 ---
 
-- ✅ Stdio transport (standard for MCP)
-- ⏳ Session storage mechanism (in-memory vs persistent?)
+## 🔮 Future Enhancements
 
-### Phase 6 Decisions (Future)
-  - Recommend: Start with Web (FastAPI + React) for maximum reach
-- ⏳ **Authentication** - If multi-user, how to handle?
+### Phase 6.1: Windows Support
+- Native Windows installer (.exe)
+- PowerShell setup script
+- Windows Terminal formatting
+
+### Phase 7.1: Advanced Web Features
+- Multi-user support with authentication
+- Collection manager (track owned cards)
+- Visual combo graph (interactive)
+- Price alerts and tracking
+
+### Phase 7.2: Mobile & Offline
+- Progressive Web App (PWA)
+- Offline mode with service workers
+- Mobile-optimized UI
+
+### Phase 7.3: Desktop App
+- Electron wrapper for native desktop
+- Auto-updates
+- System tray integration
+
+### Phase 8: Community Features
+- Share decks publicly
+- Deck ratings and comments
+- Popular deck library
+- Community combo database
 
 ---
 
@@ -443,9 +533,10 @@ For a concise status, see `PHASE_4_STATUS.md`.
 
 ## Open Questions
 
-1. **Phase 4:** How to handle long-running queries in MCP? (>30s LLM generation)
-2. **Phase 5:** What deck formats to prioritize? (Commander, Modern, Standard?)
-3. **Phase 6:** Single-user or multi-user? Affects architecture significantly
+1. **Phase 6:** Which LLM provider should be default? (Ollama for privacy vs Gemini for speed)
+2. **Phase 6:** Support Windows in initial release or Phase 6.1?
+3. **Phase 7:** Multi-user support in Phase 7 or defer to 7.1?
+4. **Phase 7:** PWA/offline mode in Phase 7 or defer to 7.2?
 5. **General:** Should we support custom card databases? (proxies, custom formats)
 
 ---
@@ -458,5 +549,5 @@ Future: Consider opening to community contributions after Phase 6.
 ---
 
 **Last Updated:** October 21, 2025  
-**Next Review:** After Phase 6 planning  
-**Status:** Phase 5 complete! Ready for UI enhancements 🚀
+**Next Review:** After Phase 6 implementation  
+**Status:** Phase 5.1 complete! Planning Phase 6 (CLI) and Phase 7 (Web UI) 🚀
