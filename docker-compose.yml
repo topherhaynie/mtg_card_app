@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Main MTG Card App service
+  mtg-card-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mtg-card-app:latest
+    container_name: mtg-card-app
+    
+    # Use interactive mode by default
+    stdin_open: true
+    tty: true
+    
+    # Volume mounts for data persistence
+    volumes:
+      - mtg-data:/home/mtguser/data
+      - mtg-config:/home/mtguser/.mtg
+    
+    # Environment variables
+    environment:
+      - MTG_DATA_DIR=/home/mtguser/data
+      - MTG_CONFIG_DIR=/home/mtguser/.mtg
+      # Uncomment and set if using OpenAI
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Uncomment and set if using Anthropic
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # Uncomment and set if using Gemini
+      # - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # Uncomment and set if using Groq
+      # - GROQ_API_KEY=${GROQ_API_KEY}
+    
+    # Override default command to run interactive CLI
+    command: mtg
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Networks
+    networks:
+      - mtg-network
+
+  # Optional: Ollama service for local LLM (uncomment to enable)
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: mtg-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   restart: unless-stopped
+  #   networks:
+  #     - mtg-network
+
+# Named volumes for persistence
+volumes:
+  mtg-data:
+    driver: local
+  mtg-config:
+    driver: local
+  # ollama-data:
+  #   driver: local
+
+# Network for service communication
+networks:
+  mtg-network:
+    driver: bridge
