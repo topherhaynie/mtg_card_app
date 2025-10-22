@@ -42,13 +42,13 @@
 - [x] Test methods with real data
 
 ### Step 4: Create Data Bundle Script (1 hour)
-- [ ] Create `scripts/build_data_bundle.py`
-- [ ] Use service methods for export (not direct file copy)
-- [ ] Gather: cards.db, chroma/, combos.json
-- [ ] Create manifest.json with metadata (version, dates, counts)
-- [ ] Create compressed tarball (tar.xz)
-- [ ] Test script locally with real data
-- [ ] Verify bundle size (~100 MB compressed)
+- [x] Create `scripts/build_data_bundle.py`
+- [x] Use service methods for export (not direct file copy)
+- [x] Gather: cards.db, chroma/, combos.json
+- [x] Create manifest.json with metadata (version, dates, counts)
+- [x] Create compressed tarball (tar.xz)
+- [x] Test script locally with real data
+- [x] Verify bundle size (~78 MB compressed - ✅ 35,402 cards + embeddings)
 
 ### Step 5: Enhance Update Command (1 hour)
 - [ ] Add `--since` parameter to update command
