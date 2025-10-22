@@ -81,23 +81,76 @@ def _update_cards(data_dir: Path, force: bool) -> None:
             return
 
     try:
-        # Import the script functionality
-        from scripts.import_oracle_cards import main as import_cards
-
         console.print("Downloading Oracle card data from Scryfall...")
         console.print("[dim]This may take 2-5 minutes for ~35,000 cards[/dim]\n")
 
+        # Import inline for better progress tracking
+        import json
+        import requests
+        from pathlib import Path as ScriptPath
+        from rich.progress import BarColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn
+
+        registry = ManagerRegistry.get_instance()
+        card_service = registry.card_data_manager._service
+
+        # Download Scryfall bulk data
+        console.print("📥 Fetching Scryfall bulk data URL...")
+        bulk_data_url = "https://api.scryfall.com/bulk-data"
+        response = requests.get(bulk_data_url)
+        response.raise_for_status()
+        bulk_data = response.json()
+
+        # Find Oracle Cards download
+        oracle_data = next(
+            (item for item in bulk_data["data"] if item["type"] == "oracle_cards"),
+            None,
+        )
+        if not oracle_data:
+            raise ValueError("Oracle cards bulk data not found")
+
+        download_url = oracle_data["download_uri"]
+        console.print(f"📦 Downloading from: {download_url}")
+
+        # Download with progress bar
         with Progress(
             SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            DownloadColumn(),
+            TransferSpeedColumn(),
+            TimeRemainingColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task("Importing cards...", total=None)
+            response = requests.get(download_url, stream=True)
+            response.raise_for_status()
 
-            # Run the import
-            import_cards()
+            total_size = int(response.headers.get("content-length", 0))
+            task = progress.add_task("Downloading...", total=total_size)
 
-            progress.update(task, completed=True)
+            chunks = []
+            for chunk in response.iter_content(chunk_size=8192):
+                chunks.append(chunk)
+                progress.update(task, advance=len(chunk))
+
+            cards_data = json.loads(b"".join(chunks))
+
+        console.print(f"📊 Processing {len(cards_data):,} cards...")
+
+        # Import with progress bar
+        with Progress(
+            SpinnerColumn(),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TextColumn("•"),
+            TextColumn("{task.completed}/{task.total} cards"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Importing...", total=len(cards_data))
+
+            batch_size = 500
+            for i in range(0, len(cards_data), batch_size):
+                batch = cards_data[i:i + batch_size]
+                card_service.bulk_insert(batch)
+                progress.update(task, advance=len(batch))
 
         console.print(f"[green]✓[/green] Card database updated: {cards_db}")
 
