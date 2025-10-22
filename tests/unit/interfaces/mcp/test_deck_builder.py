@@ -1,4 +1,4 @@
-"""E2E tests for MCP deck builder tools."""
+"""Unit tests for MCP deck builder tools."""
 
 import pytest
 

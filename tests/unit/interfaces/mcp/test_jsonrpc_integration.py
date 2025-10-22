@@ -1,4 +1,8 @@
-"""E2E JSON-RPC golden-path and schema validation tests for all MCP tools."""
+"""Integration tests for JSON-RPC protocol handling with MCP tools.
+
+Tests the JSON-RPC protocol layer using a dummy interactor to verify
+schema validation and golden-path request/response flows.
+"""
 
 import io
 import json
