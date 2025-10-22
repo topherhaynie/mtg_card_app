@@ -40,41 +40,54 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 - ✅ Card data display
 - ✅ Interactor integration
 
+### 4. `update` Command (8 tests) ✅
+**File**: `tests/unit/cli/commands/test_update.py`
+- ✅ Basic update (cards + embeddings)
+- ✅ Force flag
+- ✅ Cards-only flag
+- ✅ Embeddings-only flag
+- ✅ Conflicting flags error
+- ✅ Success message
+- ✅ Data directory creation
+- ✅ Next steps display
+
+### 5. `setup` Command (9 tests) ✅
+**File**: `tests/unit/cli/commands/test_setup.py`
+- ✅ Basic wizard flow
+- ✅ Ollama configuration
+- ✅ OpenAI configuration with env vars
+- ✅ Unavailable provider warnings
+- ✅ Data file verification
+- ✅ Connection testing
+- ✅ Generation testing
+- ✅ Connection failure handling
+- ✅ Completion message
+
 ## Commands Remaining 📋
 
-### 4. `combo` Command
+### 6. `combo` Command
 **File**: `mtg_card_app/ui/cli/commands/combo.py`
 **Subcommands**: find, search, add, remove
 **Estimated Tests**: ~12-15
 
-### 5. `deck` Command
+### 7. `deck` Command
 **File**: `mtg_card_app/ui/cli/commands/deck.py`
 **Subcommands**: build, validate, analyze, suggest, export, load
-**Estimated Tests**: ~15-20
+**Estimated Tests**: ~18-22
 
-### 6. `config` Command
+### 8. `config` Command
 **File**: `mtg_card_app/ui/cli/commands/config.py`
 **Subcommands**: get, set, list, provider, reset
-**Estimated Tests**: ~10-12
-
-### 7. `setup` Command
-**File**: `mtg_card_app/ui/cli/commands/setup.py`
-**Wizard-based setup**
-**Estimated Tests**: ~8-10
-
-### 8. `update` Command
-**File**: `mtg_card_app/ui/cli/commands/update.py`
-**Data update command**
-**Estimated Tests**: ~5-8
+**Estimated Tests**: ~12-15
 
 ## Test Statistics
 
 ### Current Status
-- **Total Tests**: 28
-- **Passing**: 28 ✅
+- **Total Tests**: 45
+- **Passing**: 45 ✅
 - **Failing**: 0
-- **Commands Tested**: 3 / 8 (37.5%)
-- **Estimated Total Tests**: ~90-100
+- **Commands Tested**: 5 / 8 (62.5%)
+- **Estimated Total Tests**: ~95-105
 
 ### Coverage
 | Command | Tests | Status |
@@ -82,11 +95,11 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 | card    | 15    | ✅ Complete |
 | search  | 8     | ✅ Complete |
 | stats   | 5     | ✅ Complete |
+| update  | 8     | ✅ Complete |
+| setup   | 9     | ✅ Complete |
 | combo   | 0     | 📋 Pending |
 | deck    | 0     | 📋 Pending |
 | config  | 0     | 📋 Pending |
-| setup   | 0     | 📋 Pending |
-| update  | 0     | 📋 Pending |
 
 ## Mock Infrastructure
 
@@ -102,16 +115,21 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 - Includes all required attributes (name, mana_cost, type_line, etc.)
 - Properly handles None values
 
+## Phase Completion
+
+### ✅ Phase 1: Complete (Update & Setup Commands)
+- **Tests Added**: 17 tests
+- **Total Tests**: 45
+- **Commands**: update, setup
+- **Time**: ~2 hours
+- **Success Rate**: 100%
+
 ## Next Steps
 
-1. **Create test_combo.py** - Test combo subcommands
-2. **Create test_deck.py** - Test deck subcommands  
-3. **Create test_config.py** - Test config subcommands
-4. **Create test_setup.py** - Test setup wizard
-5. **Create test_update.py** - Test update command
-6. **Run full test suite** - Verify all ~100 tests pass
-7. **Generate coverage report** - Ensure 80%+ CLI coverage
-8. **Commit tests** - Document testing completion
+1. **Phase 2: Combo & Partial Deck** - Create test_combo.py and partial test_deck.py
+2. **Phase 3: Complete Deck & Config** - Finish test_deck.py and create test_config.py
+3. **Phase 4: Polish** - Coverage report, edge cases, documentation
+4. **Estimated Remaining**: ~7-11 hours
 
 ## Notes
 
@@ -119,3 +137,4 @@ Creating comprehensive unit tests for all CLI commands to ensure proper function
 - Tests verify correct method calls and output formatting
 - Edge cases and error handling thoroughly covered
 - Lint warnings (assert statements, trailing commas) are expected in test code
+- Mock patterns established and working reliably
