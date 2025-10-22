@@ -28,9 +28,25 @@ dependencies = [
     "sentence-transformers~=5.1",
     "torch~=2.5",
     "mcp>=1,<2",
+    # Configuration management
+    "tomli~=2.0; python_version < '3.11'",
+    "tomli-w~=1.0",
 ]
 
 [project.optional-dependencies]
+# LLM Provider dependencies (install only what you need)
+openai = ["openai~=1.0"]
+anthropic = ["anthropic~=0.39"]
+gemini = ["google-generativeai~=0.8"]
+groq = ["groq~=0.11"]
+all-providers = [
+    "openai~=1.0",
+    "anthropic~=0.39",
+    "google-generativeai~=0.8",
+    "groq~=0.11",
+]
+
+# Development dependencies
 dev = [
     "pytest~=8.3",
     "pytest-cov~=6.0",
@@ -59,6 +75,9 @@ addopts = [
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "e2e: marks tests as end-to-end (deselect with '-m \"not e2e\"')",
+    "config: marks tests for configuration and provider system (select with '-m config')",
+    "config_manager: marks tests for Config class only (select with '-m config_manager')",
+    "config_provider: marks tests for ProviderFactory (select with '-m config_provider')",
 ]
 
 [tool.ruff]

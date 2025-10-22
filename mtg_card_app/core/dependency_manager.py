@@ -7,15 +7,11 @@ allowing for easy configuration, testing, and swapping of implementations.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from mtg_card_app.managers.card_data.services import (
     CardDataService,
     ScryfallCardDataService,
-)
-from mtg_card_app.managers.llm.services import (
-    LLMService,
-    OllamaLLMService,
 )
 from mtg_card_app.managers.rag.services import (
     ChromaVectorStoreService,
@@ -24,6 +20,9 @@ from mtg_card_app.managers.rag.services import (
     VectorStoreService,
 )
 from mtg_card_app.utils.query_cache import QueryCache
+
+if TYPE_CHECKING:
+    from mtg_card_app.managers.llm.services import LLMService
 
 logger = logging.getLogger(__name__)
 
@@ -124,15 +123,23 @@ class DependencyManager:
         return self._vector_store_service
 
     def get_llm_service(self) -> LLMService:
-        """Get or create the LLM service.
+        """Get or create the LLM service from configuration.
 
         Returns:
-            LLMService instance
+            LLMService instance configured from ~/.mtg/config.toml
 
         """
         if self._llm_service is None:
-            logger.debug("Creating default OllamaLLMService")
-            self._llm_service = OllamaLLMService(model="llama3")
+            from mtg_card_app.config import ProviderFactory, get_config
+
+            logger.debug("Creating LLM service from configuration")
+            config = get_config()
+            factory = ProviderFactory(config)
+
+            provider = config.get("llm.provider", "ollama")
+            logger.debug("Using LLM provider: %s", provider)
+
+            self._llm_service = factory.create_provider(provider)
         return self._llm_service
 
     def get_query_cache(self) -> QueryCache:

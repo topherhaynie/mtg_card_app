@@ -43,8 +43,12 @@ class OllamaLLMService(LLMService):
     def get_model_name(self) -> str:
         return self.model
 
+    def get_service_name(self) -> str:
+        return "Ollama"
+
     def get_stats(self) -> dict[str, Any]:
         return {
+            "provider": "Ollama",
             "model": self.model,
             "api_url": self.api_url,
         }
