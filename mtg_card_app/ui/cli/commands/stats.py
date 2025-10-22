@@ -43,7 +43,7 @@ def show_stats() -> None:
     if rag_stats:
         table.add_row("RAG Service", "Active" if rag_stats else "N/A")
 
-    # DB stats  
+    # DB stats
     db_stats = stats.get("db")
     if db_stats:
         table.add_row("Database", "SQLite")

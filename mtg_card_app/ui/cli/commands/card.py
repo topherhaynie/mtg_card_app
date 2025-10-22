@@ -25,6 +25,7 @@ def card(name: str, output_format: str, prices: bool) -> None:
         mtg card "Lightning Bolt"
         mtg card "Sol Ring" --format json
         mtg card "Mana Crypt" --prices
+
     """
     registry = ManagerRegistry.get_instance()
     interactor = Interactor(
@@ -58,6 +59,7 @@ def _display_rich(card_obj, show_prices: bool = False) -> None:
     Args:
         card_obj: Card domain object
         show_prices: Whether to show detailed pricing
+
     """
     # Main card info
     title = f"🎴 {card_obj.name}"
@@ -113,6 +115,7 @@ def _display_text(card_obj, show_prices: bool = False) -> None:
     Args:
         card_obj: Card domain object
         show_prices: Whether to show detailed pricing
+
     """
     print(f"\n{card_obj.name}")
     print("=" * len(card_obj.name))
@@ -145,6 +148,7 @@ def _display_json(card_obj) -> None:
 
     Args:
         card_obj: Card domain object
+
     """
     # Convert card object to dict
     card_dict = {
@@ -152,8 +156,18 @@ def _display_json(card_obj) -> None:
     }
 
     # Add optional attributes if they exist
-    for attr in ["mana_cost", "type_line", "oracle_text", "power", "toughness",
-                 "loyalty", "price_usd", "set_name", "rarity", "artist"]:
+    for attr in [
+        "mana_cost",
+        "type_line",
+        "oracle_text",
+        "power",
+        "toughness",
+        "loyalty",
+        "price_usd",
+        "set_name",
+        "rarity",
+        "artist",
+    ]:
         if hasattr(card_obj, attr):
             value = getattr(card_obj, attr)
             if value is not None:

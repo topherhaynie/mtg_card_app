@@ -9,8 +9,6 @@ import sys
 import click
 from rich.console import Console
 
-from mtg_card_app.core.dependency_manager import DependencyManager
-
 console = Console()
 
 
@@ -29,6 +27,7 @@ def cli(ctx: click.Context, version: bool) -> None:
         mtg combo find "Isochron Scepter"      # Find combos
         mtg deck build --commander Muldrotha   # Build a deck
         mtg config show                        # Show configuration
+
     """
     if version:
         console.print("[bold cyan]MTG Card App[/bold cyan] version 0.1.0")
@@ -49,6 +48,7 @@ def chat(query: tuple[str, ...]) -> None:
     Examples:
         mtg chat                           # Interactive mode
         mtg chat "show me blue counterspells"  # Single question
+
     """
     from .chat import start_chat
 

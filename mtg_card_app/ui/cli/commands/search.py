@@ -2,7 +2,6 @@
 
 import click
 from rich.console import Console
-from rich.table import Table
 
 from mtg_card_app.core.interactor import Interactor
 from mtg_card_app.core.manager_registry import ManagerRegistry
@@ -19,7 +18,6 @@ def search(query: tuple[str, ...], limit: int, budget: float | None, format: str
     """Search for MTG cards using natural language or Scryfall syntax.
 
     Examples:
-
         mtg search "Lightning Bolt"
 
         mtg search "blue counterspells" --limit 20
@@ -42,7 +40,7 @@ def search(query: tuple[str, ...], limit: int, budget: float | None, format: str
         with console.status(f"[cyan]Searching for: {query_str}...[/cyan]", spinner="dots"):
             # Use natural language query for semantic search
             response = interactor.answer_natural_language_query(
-                f"Find cards matching: {query_str}. Show top {limit} results."
+                f"Find cards matching: {query_str}. Show top {limit} results.",
             )
 
         if format == "table":

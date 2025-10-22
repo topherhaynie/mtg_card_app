@@ -4,7 +4,6 @@ import click
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.table import Table
 
 from mtg_card_app.core.interactor import Interactor
 from mtg_card_app.core.manager_registry import ManagerRegistry
@@ -20,6 +19,7 @@ def combo() -> None:
         mtg combo find "Isochron Scepter"
         mtg combo search "Thoracle"
         mtg combo budget 100
+
     """
 
 
@@ -35,6 +35,7 @@ def find(card_name: str, limit: int) -> None:
     Examples:
         mtg combo find "Isochron Scepter" --limit 10
         mtg combo find "Thassa's Oracle"
+
     """
     registry = ManagerRegistry.get_instance()
     interactor = Interactor(
@@ -80,6 +81,7 @@ def search(card_name: str) -> None:
     Examples:
         mtg combo search "Demonic Consultation"
         mtg combo search "Dramatic Reversal"
+
     """
     registry = ManagerRegistry.get_instance()
     interactor = Interactor(
@@ -121,6 +123,7 @@ def budget(max_price: float, limit: int) -> None:
     Examples:
         mtg combo budget 50
         mtg combo budget 100 --limit 20
+
     """
     registry = ManagerRegistry.get_instance()
     interactor = Interactor(
@@ -166,6 +169,7 @@ def create(card_names: tuple[str, ...], name: str | None, description: str | Non
     Examples:
         mtg combo create "Card A" "Card B" --name "My Combo"
         mtg combo create "Thassa's Oracle" "Demonic Consultation" --description "Win the game"
+
     """
     registry = ManagerRegistry.get_instance()
     interactor = Interactor(

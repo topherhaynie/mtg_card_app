@@ -28,7 +28,9 @@ def deck() -> None:
 
 
 @deck.command()
-@click.argument("deck_format", type=click.Choice(["standard", "modern", "commander", "legacy", "vintage", "pioneer", "pauper"]))
+@click.argument(
+    "deck_format", type=click.Choice(["standard", "modern", "commander", "legacy", "vintage", "pioneer", "pauper"])
+)
 @click.option("--commander", "-c", help="Commander card name (for Commander format)")
 @click.option("--output", "-o", type=click.Path(), help="Output file path")
 def new(deck_format: str, commander: str | None, output: str | None) -> None:
@@ -111,7 +113,7 @@ def validate(deck_file: str) -> None:
         if is_legal:
             console.print(f"\n[green]✓[/green] Deck is legal for {validation.get('format', 'Unknown')} format")
         else:
-            console.print(f"\n[red]✗[/red] Deck has validation issues:\n")
+            console.print("\n[red]✗[/red] Deck has validation issues:\n")
             for i, issue in enumerate(issues, 1):
                 console.print(f"  {i}. {issue}")
 
@@ -202,7 +204,7 @@ def suggest(deck_file: str, theme: str | None, budget: float | None, combo_mode:
             )
 
         # Display suggestions
-        console.print(f"\n[bold cyan]🎴 Deck Suggestions:[/bold cyan]\n")
+        console.print("\n[bold cyan]🎴 Deck Suggestions:[/bold cyan]\n")
 
         for i, suggestion in enumerate(suggestions, 1):
             card_name = suggestion.get("card_name", "Unknown")
@@ -269,7 +271,13 @@ def export(deck_file: str, export_format: str, output: str | None) -> None:
 
 @deck.command()
 @click.argument("deck_file", type=click.Path())
-@click.option("--format", "-f", "deck_format", type=click.Choice(["standard", "modern", "commander", "legacy", "vintage", "pioneer", "pauper"]), required=True)
+@click.option(
+    "--format",
+    "-f",
+    "deck_format",
+    type=click.Choice(["standard", "modern", "commander", "legacy", "vintage", "pioneer", "pauper"]),
+    required=True,
+)
 @click.option("--budget", "-b", type=float, help="Maximum budget")
 @click.option("--theme", "-t", help="Deck theme or strategy")
 def build(deck_file: str, deck_format: str, budget: float | None, theme: str | None) -> None:
@@ -316,7 +324,7 @@ def build(deck_file: str, deck_format: str, budget: float | None, theme: str | N
 
 def _display_analysis_rich(analysis: dict) -> None:
     """Display deck analysis in rich format."""
-    console.print(f"\n[bold cyan]📊 Deck Analysis:[/bold cyan]\n")
+    console.print("\n[bold cyan]📊 Deck Analysis:[/bold cyan]\n")
 
     # Basic stats
     stats_table = Table(show_header=False, box=None)

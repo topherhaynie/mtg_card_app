@@ -14,7 +14,6 @@ def config() -> None:
     """Manage MTG Card App configuration.
 
     Examples:
-
         mtg config show
 
         mtg config set llm.provider openai
@@ -64,7 +63,6 @@ def set(key: str, value: str) -> None:
     """Set a configuration value.
 
     Examples:
-
         mtg config set llm.provider openai
 
         mtg config set cache.enabled true
@@ -96,7 +94,6 @@ def get(key: str) -> None:
     """Get a configuration value.
 
     Examples:
-
         mtg config get llm.provider
 
         mtg config get cache.enabled
