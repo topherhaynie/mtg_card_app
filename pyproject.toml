@@ -41,12 +41,6 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-[project.urls]
-Homepage = "https://github.com/topherhaynie/mtg_card_app"
-Repository = "https://github.com/topherhaynie/mtg_card_app"
-Issues = "https://github.com/topherhaynie/mtg_card_app/issues"
-Documentation = "https://github.com/topherhaynie/mtg_card_app#readme"
-Changelog = "https://github.com/topherhaynie/mtg_card_app/releases"
 dependencies = [
     "requests~=2.32",
     "chromadb~=1.2",
@@ -60,6 +54,13 @@ dependencies = [
     "click~=8.1",
     "rich~=13.9",
 ]
+
+[project.urls]
+Homepage = "https://github.com/topherhaynie/mtg_card_app"
+Repository = "https://github.com/topherhaynie/mtg_card_app"
+Issues = "https://github.com/topherhaynie/mtg_card_app/issues"
+Documentation = "https://github.com/topherhaynie/mtg_card_app#readme"
+Changelog = "https://github.com/topherhaynie/mtg_card_app/releases"
 
 [project.optional-dependencies]
 # LLM Provider dependencies (install only what you need)
