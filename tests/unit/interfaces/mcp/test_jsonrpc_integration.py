@@ -32,7 +32,7 @@ class DummyInteractor:
                 type_line="Instant",
                 oracle_text="Counter target spell.",
                 colors=["U"],
-            )
+            ),
         ]
 
 
