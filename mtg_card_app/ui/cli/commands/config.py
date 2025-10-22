@@ -73,15 +73,15 @@ def set(key: str, value: str) -> None:
     # Convert boolean strings
     if value.lower() in ["true", "false"]:
         value = value.lower() == "true"
-
-    # Convert numeric strings
-    try:
-        if "." in value:
-            value = float(value)
-        else:
-            value = int(value)
-    except ValueError:
-        pass  # Keep as string
+    else:
+        # Convert numeric strings (only if not already converted to boolean)
+        try:
+            if "." in value:
+                value = float(value)
+            else:
+                value = int(value)
+        except ValueError:
+            pass  # Keep as string
 
     cfg.set(key, value)
     console.print(f"[green]✓[/green] Set {key} = {value}")
