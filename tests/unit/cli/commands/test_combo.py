@@ -2,9 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
-from click.testing import CliRunner
-
 from mtg_card_app.ui.cli.commands.combo import combo
 
 
@@ -38,7 +35,8 @@ class TestComboFindCommand:
         # Verify
         assert result.exit_code == 0
         mock_interactor.find_combo_pieces.assert_called_once_with(
-            "Isochron Scepter", n_results=5
+            "Isochron Scepter",
+            n_results=5,
         )
         assert "Dramatic Reversal" in result.output
         assert "Isochron Scepter" in result.output
@@ -84,7 +82,10 @@ class TestComboFindCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_find_exception_handling(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo find error handling."""
         # Setup mocks
@@ -137,7 +138,10 @@ class TestComboSearchCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_search_no_results(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo search with no results."""
         # Setup mocks
@@ -159,7 +163,10 @@ class TestComboSearchCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_search_exception_handling(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo search error handling."""
         # Setup mocks
@@ -212,7 +219,10 @@ class TestComboBudgetCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_budget_with_limit(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo budget with custom limit."""
         # Setup mocks
@@ -222,8 +232,7 @@ class TestComboBudgetCommand:
         mock_interactor = Mock()
         # Return more combos than default limit
         mock_interactor.get_budget_combos.return_value = [
-            {"name": f"Combo {i}", "cards": ["Card A"], "total_price": 10.0}
-            for i in range(20)
+            {"name": f"Combo {i}", "cards": ["Card A"], "total_price": 10.0} for i in range(20)
         ]
         mock_interactor_class.return_value = mock_interactor
 
@@ -240,7 +249,10 @@ class TestComboBudgetCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_budget_no_results(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo budget with no results."""
         # Setup mocks
@@ -261,7 +273,10 @@ class TestComboBudgetCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_budget_exception_handling(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo budget error handling."""
         # Setup mocks
@@ -309,7 +324,10 @@ class TestComboCreateCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_create_with_name(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo creation with custom name."""
         # Setup mocks
@@ -322,7 +340,8 @@ class TestComboCreateCommand:
 
         # Run command
         result = cli_runner.invoke(
-            combo, ["create", "Card A", "Card B", "--name", "My Custom Combo"]
+            combo,
+            ["create", "Card A", "Card B", "--name", "My Custom Combo"],
         )
 
         # Verify
@@ -334,7 +353,10 @@ class TestComboCreateCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_create_with_description(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo creation with description."""
         # Setup mocks
@@ -359,7 +381,10 @@ class TestComboCreateCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_create_default_name(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo creation with auto-generated name."""
         # Setup mocks
@@ -381,7 +406,10 @@ class TestComboCreateCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_create_multiple_cards(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo creation with multiple cards."""
         # Setup mocks
@@ -403,7 +431,10 @@ class TestComboCreateCommand:
     @patch("mtg_card_app.ui.cli.commands.combo.Interactor")
     @patch("mtg_card_app.ui.cli.commands.combo.ManagerRegistry")
     def test_combo_create_exception_handling(
-        self, mock_registry_class, mock_interactor_class, cli_runner
+        self,
+        mock_registry_class,
+        mock_interactor_class,
+        cli_runner,
     ):
         """Test combo create error handling."""
         # Setup mocks
