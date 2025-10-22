@@ -175,3 +175,57 @@ class CardDataService(ABC):
 
         """
         return None
+
+    @abstractmethod
+    def export_to_path(self, path: str) -> bool:
+        """Export the data store to a specified path.
+
+        This method should copy/export the underlying data storage
+        (database file, directory, etc.) to the specified path for
+        creating data bundles or backups.
+
+        Args:
+            path: Destination path for the exported data
+
+        Returns:
+            True if export successful, False otherwise
+
+        Raises:
+            Exception: On export errors
+
+        """
+
+    @abstractmethod
+    def import_from_path(self, path: str) -> bool:
+        """Import data from a specified path.
+
+        This method should restore/import data from the specified path,
+        replacing or merging with existing data as appropriate for the
+        implementation.
+
+        Args:
+            path: Source path containing data to import
+
+        Returns:
+            True if import successful, False otherwise
+
+        Raises:
+            Exception: On import errors
+
+        """
+
+    @abstractmethod
+    def get_last_update_date(self) -> str | None:
+        """Get the date of the most recently released card in the database.
+
+        This is used to determine what data needs to be fetched during
+        incremental updates (only cards released after this date).
+
+        Returns:
+            ISO format date string (YYYY-MM-DD) of the most recent card,
+            or None if no cards in database
+
+        Raises:
+            Exception: On query errors
+
+        """

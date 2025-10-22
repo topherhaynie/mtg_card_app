@@ -238,3 +238,93 @@ class ChromaVectorStoreService:
     def get_service_name(self) -> str:
         """Get the service name."""
         return "ChromaDB"
+
+    def export_embeddings(self, path: str) -> bool:
+        """Export all embeddings to a specified path.
+
+        Copies the entire ChromaDB persistence directory to the target path
+        for creating data bundles or backups.
+
+        Args:
+            path: Destination path for the exported embeddings
+
+        Returns:
+            True if export successful, False otherwise
+
+        """
+        import shutil
+
+        try:
+            src_path = Path(self.data_dir)
+            dest_path = Path(path)
+
+            # Ensure ChromaDB has persisted everything
+            # (ChromaDB auto-persists, but good to be explicit)
+            if self._client is not None:
+                logger.debug("Ensuring ChromaDB persistence before export")
+
+            # Copy the entire ChromaDB directory
+            if dest_path.exists():
+                shutil.rmtree(dest_path)
+
+            shutil.copytree(src_path, dest_path)
+            logger.info("Exported embeddings to %s", path)
+        except OSError:
+            logger.exception("Failed to export embeddings to %s", path)
+            return False
+        else:
+            return True
+
+    def import_embeddings(self, path: str) -> bool:
+        """Import embeddings from a specified path.
+
+        Replaces the current ChromaDB directory with the one at the
+        specified path, then reinitializes the client.
+
+        Args:
+            path: Source path containing embeddings to import
+
+        Returns:
+            True if import successful, False otherwise
+
+        """
+        import shutil
+
+        try:
+            src_path = Path(path)
+            dest_path = Path(self.data_dir)
+
+            if not src_path.exists():
+                logger.error("Source embeddings not found at %s", path)
+                return False
+
+            # Close existing client/collection if open
+            self._collection = None
+            self._client = None
+
+            # Replace the ChromaDB directory
+            if dest_path.exists():
+                shutil.rmtree(dest_path)
+
+            shutil.copytree(src_path, dest_path)
+
+            # Reinitialize client and collection
+            # (will happen lazily on next access)
+            logger.info("Imported embeddings from %s", path)
+        except (OSError, FileNotFoundError):
+            logger.exception("Failed to import embeddings from %s", path)
+            return False
+        else:
+            return True
+
+    def get_embedding_count(self) -> int:
+        """Get the total number of embeddings in the store.
+
+        This is an alias for count() to maintain consistency with the
+        data bundle manifest naming conventions.
+
+        Returns:
+            Count of embeddings in the store
+
+        """
+        return self.count()

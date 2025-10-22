@@ -20,26 +20,26 @@
 ## 📊 Priority 1: Pre-computed Data Bundle (5-6 hours) 🆕
 
 ### Step 1: Extend Data Service Protocols (1 hour)
-- [ ] Add `export_to_path()` to CardDataService protocol
-- [ ] Add `import_from_path()` to CardDataService protocol
-- [ ] Add `get_last_update_date()` to CardDataService protocol
-- [ ] Add `export_embeddings()` to RAGService protocol
-- [ ] Add `import_embeddings()` to RAGService protocol
-- [ ] Add `get_embedding_count()` to RAGService protocol
+- [x] Add `export_to_path()` to CardDataService protocol
+- [x] Add `import_from_path()` to CardDataService protocol
+- [x] Add `get_last_update_date()` to CardDataService protocol
+- [x] Add `export_embeddings()` to RAGService protocol
+- [x] Add `import_embeddings()` to RAGService protocol
+- [x] Add `get_embedding_count()` to RAGService protocol
 
 ### Step 2: Implement SQLiteCardDataService Methods (30 min)
-- [ ] Implement `export_to_path()` (database copy)
-- [ ] Implement `import_from_path()` (database restore)
-- [ ] Implement `get_last_update_date()` (query MAX(released_at))
-- [ ] Add error handling for missing files
-- [ ] Test methods with real data
+- [x] Implement `export_to_path()` (database copy)
+- [x] Implement `import_from_path()` (database restore)
+- [x] Implement `get_last_update_date()` (query MAX(released_at))
+- [x] Add error handling for missing files
+- [x] Test methods with real data
 
 ### Step 3: Implement ChromaRAGService Methods (30 min)
-- [ ] Implement `export_embeddings()` (directory copy)
-- [ ] Implement `import_embeddings()` (directory restore)
-- [ ] Implement `get_embedding_count()` (collection.count())
-- [ ] Handle ChromaDB persistence properly
-- [ ] Test methods with real data
+- [x] Implement `export_embeddings()` (directory copy)
+- [x] Implement `import_embeddings()` (directory restore)
+- [x] Implement `get_embedding_count()` (collection.count())
+- [x] Handle ChromaDB persistence properly
+- [x] Test methods with real data
 
 ### Step 4: Create Data Bundle Script (1 hour)
 - [ ] Create `scripts/build_data_bundle.py`

@@ -1,6 +1,8 @@
 """SQLite-based card service for database operations on Card entities."""
 
 import json
+import logging
+import shutil
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -8,6 +10,8 @@ from typing import Any
 
 from mtg_card_app.domain.entities import Card
 from mtg_card_app.managers.db.services.base import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class CardSqliteService(BaseService[Card]):
@@ -417,3 +421,96 @@ class CardSqliteService(BaseService[Card]):
                     budget_cards.append(card)
 
         return budget_cards
+
+    def export_to_path(self, path: str) -> bool:
+        """Export the database to a specified path.
+
+        Creates a copy of the SQLite database file for bundling or backup.
+
+        Args:
+            path: Destination path for the exported database
+
+        Returns:
+            True if export successful, False otherwise
+
+        """
+        try:
+            src_path = Path(self.db_path)
+            dest_path = Path(path)
+
+            # Ensure destination directory exists
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Copy the database file
+            shutil.copy2(src_path, dest_path)
+        except OSError:
+            logger.exception("Failed to export database to %s", path)
+            return False
+        else:
+            return True
+
+    def import_from_path(self, path: str) -> bool:
+        """Import data from a specified path.
+
+        Replaces the current database with the one at the specified path.
+
+        Args:
+            path: Source path containing database to import
+
+        Returns:
+            True if import successful, False otherwise
+
+        """
+        try:
+            src_path = Path(path)
+            dest_path = Path(self.db_path)
+
+            if not src_path.exists():
+                logger.error("Source database not found at %s", path)
+                return False
+
+            # Ensure destination directory exists
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Replace the database file
+            shutil.copy2(src_path, dest_path)
+
+            # Reinitialize to ensure schema is up to date
+            self._init_database()
+        except (OSError, FileNotFoundError):
+            logger.exception("Failed to import database from %s", path)
+            return False
+        else:
+            return True
+
+    def get_last_update_date(self) -> str | None:
+        """Get the date of the most recently released card in the database.
+
+        This queries the 'released_at' field from the raw_data JSON to find
+        the most recent card. This is used for incremental updates.
+
+        Returns:
+            ISO format date string (YYYY-MM-DD) of the most recent card,
+            or None if no cards in database
+
+        """
+        conn = self._get_connection()
+        try:
+            # Query for the most recent released_at date from raw_data JSON
+            # SQLite's json_extract can pull values from JSON columns
+            cursor = conn.execute(
+                """
+                SELECT json_extract(raw_data, '$.released_at') as released_at
+                FROM cards
+                WHERE json_extract(raw_data, '$.released_at') IS NOT NULL
+                ORDER BY released_at DESC
+                LIMIT 1
+                """,
+            )
+            result = cursor.fetchone()
+            return result[0] if result else None
+        except sqlite3.Error:
+            logger.exception("Failed to get last update date")
+            return None
+        finally:
+            conn.close()

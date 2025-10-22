@@ -145,3 +145,47 @@ class VectorStoreService(Protocol):
 
         """
         ...
+
+    def export_embeddings(self, path: str) -> bool:
+        """Export all embeddings to a specified path.
+
+        This method should export the vector store data (collection,
+        embeddings, metadata, etc.) to the specified path for creating
+        data bundles or backups.
+
+        Args:
+            path: Destination path for the exported embeddings
+
+        Returns:
+            True if export successful, False otherwise
+
+        """
+        ...
+
+    def import_embeddings(self, path: str) -> bool:
+        """Import embeddings from a specified path.
+
+        This method should restore/import embeddings from the specified
+        path, replacing or merging with existing data as appropriate for
+        the implementation.
+
+        Args:
+            path: Source path containing embeddings to import
+
+        Returns:
+            True if import successful, False otherwise
+
+        """
+        ...
+
+    def get_embedding_count(self) -> int:
+        """Get the total number of embeddings in the store.
+
+        This is an alias for count() to maintain consistency with the
+        data bundle manifest naming conventions.
+
+        Returns:
+            Count of embeddings in the store
+
+        """
+        ...
