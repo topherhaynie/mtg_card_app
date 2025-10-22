@@ -31,6 +31,9 @@ dependencies = [
     # Configuration management
     "tomli~=2.0; python_version < '3.11'",
     "tomli-w~=1.0",
+    # CLI dependencies
+    "click~=8.1",
+    "rich~=13.9",
 ]
 
 [project.optional-dependencies]
@@ -54,9 +57,7 @@ dev = [
 ]
 
 [project.scripts]
-mtg-card-app = "mtg_card_app.__main__:main"
-mtg-deck-builder = "mtg_card_app.deck_builder.__main__:main"
-mtg-card-search = "mtg_card_app.card_search.__main__:main"
+mtg = "mtg_card_app.ui.cli.main:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

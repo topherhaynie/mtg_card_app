@@ -33,6 +33,7 @@ chromadb==1.2.1
     # via mtg-card-app (pyproject.toml)
 click==8.3.0
     # via
+    #   mtg-card-app (pyproject.toml)
     #   typer
     #   uvicorn
 coloredlogs==15.0.1
@@ -226,8 +227,9 @@ requests==2.32.5
     #   transformers
 requests-oauthlib==2.0.0
     # via kubernetes
-rich==14.2.0
+rich==13.9.4
     # via
+    #   mtg-card-app (pyproject.toml)
     #   chromadb
     #   typer
 rpds-py==0.27.1
@@ -273,6 +275,8 @@ tokenizers==0.22.1
     # via
     #   chromadb
     #   transformers
+tomli-w==1.2.0
+    # via mtg-card-app (pyproject.toml)
 torch==2.9.0
     # via
     #   mtg-card-app (pyproject.toml)
