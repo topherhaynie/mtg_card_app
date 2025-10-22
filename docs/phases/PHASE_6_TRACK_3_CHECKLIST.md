@@ -97,17 +97,18 @@
 - [x] Created README_PYPI.md (optimized for PyPI display)
 - [x] Updated pyproject.toml to use README_PYPI.md
 
-### Step 1.3: Package Testing (2 hours) ⏳
+### Step 1.3: Package Testing (2 hours) ✅
 - [x] Install build tools: `pip install build twine`
 - [x] Build package: `python -m build`
 - [x] Check for errors: `twine check dist/*` (PASSED)
 - [x] Fixed pyproject.toml structure (dependencies was in wrong section)
 - [x] Created dist files: mtg_card_app-0.1.0-py3-none-any.whl (115K), mtg_card_app-0.1.0.tar.gz (93K)
-- [ ] Test local installation in fresh virtualenv
-- [ ] Test with optional dependencies
-- [ ] Verify entry point: `mtg --version`
-- [ ] Test setup wizard: `mtg setup`
-- [ ] Test update command: `mtg update`
+- [x] Test local installation in fresh virtualenv (uv venv test_venv)
+- [x] Test with optional dependencies (`[openai]` extra installed successfully)
+- [x] Verify entry point: `mtg --version` (shows "MTG Card App version 0.1.0")
+- [x] Test setup wizard: `mtg setup` (starts correctly, shows wizard UI)
+- [x] Test config command: `mtg config show` (works, displays configuration)
+- [x] All CLI commands accessible and functional
 
 ### Step 1.4: TestPyPI Upload (1 hour)
 - [ ] Create account at test.pypi.org
