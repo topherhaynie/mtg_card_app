@@ -1,8 +1,10 @@
-"""Protocol-based tests for LLMService implementations (OllamaLLMService)
+"""E2E tests for LLM service implementations.
 
-NOTE: These tests hit the real Ollama LLM service which takes several seconds per test.
-Mark with @pytest.mark.slow to skip in fast test runs.
-Run with: pytest -m "not slow" to skip these tests.
+NOTE: These are END-TO-END tests that hit:
+- Real Ollama LLM service (several seconds per test)
+
+Mark tests with @pytest.mark.e2e to skip them in fast test runs.
+Run with: pytest -m "not e2e" to skip these tests.
 """
 
 import pytest
@@ -24,7 +26,7 @@ def llm_service(request):
 
 
 class TestGenerate:
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_basic_prompt(self, llm_service):
         prompt = "List two red burn spells in Magic: The Gathering."
         response = llm_service.generate(prompt, max_tokens=64)
@@ -32,7 +34,7 @@ class TestGenerate:
         assert len(response) > 0
         assert "red" in response.lower() or "burn" in response.lower()
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_longer_prompt(self, llm_service):
         prompt = "Explain the difference between counterspells and removal spells in Magic: The Gathering."
         response = llm_service.generate(prompt, max_tokens=128)

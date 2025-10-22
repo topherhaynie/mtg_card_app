@@ -1,8 +1,12 @@
-"""Protocol-based tests for Interactor query methods (multi-manager workflow)
+"""E2E tests for query functionality in Interactor.
 
-NOTE: These tests hit the real Ollama LLM service which takes several seconds per test.
-Mark with @pytest.mark.slow to skip in fast test runs.
-Run with: pytest -m "not slow" to skip these tests.
+NOTE: These are END-TO-END tests that hit:
+- Real Ollama LLM service (~30 seconds per test)
+- Real ChromaDB vector store
+- Real SQLite database
+
+Mark tests with @pytest.mark.e2e to skip them in fast test runs.
+Run with: pytest -m "not e2e" to skip these tests.
 """
 
 import pytest
@@ -27,7 +31,7 @@ def interactor():
 class TestInteractor:
     """Protocol-based tests for the Interactor using dependency-injected managers."""
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_answer_natural_language_query_basic(self, interactor) -> None:
         """Test basic query answering for green ramp cards."""
         user_query = "List two green ramp spells in Magic: The Gathering."
@@ -36,7 +40,7 @@ class TestInteractor:
         assert len(response) > 0
         assert "green" in response.lower() or "ramp" in response.lower()
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_answer_natural_language_query_formatting(self, interactor) -> None:
         """Test query formatting for tutor/draw cards."""
         user_query = "Explain the difference between tutors and card draw."

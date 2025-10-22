@@ -14,15 +14,17 @@ import logging
 import sys
 from pathlib import Path
 
+from tqdm import tqdm
+
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from mtg_card_app.core.manager_registry import ManagerRegistry
 
-# Configure logging
+# Configure logging - set to WARNING to avoid cluttering progress bar
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -30,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Vectorize all cards in the local database."""
-    logger.info("Starting card vectorization process...")
+    print("Starting card vectorization process...")
 
     # Initialize managers through registry
     registry = ManagerRegistry.get_instance()
@@ -39,47 +41,75 @@ def main():
     card_manager = registry.card_data_manager
     rag_manager = registry.rag_manager
 
-    # Fetch all cards
-    logger.info("Fetching all cards from local database...")
-    cards = card_manager.get_all_cards()
+    # Fetch all cards (no limit to get all 35k+)
+    print("Fetching all cards from local database...")
+    cards = card_manager.get_all_cards(limit=None)
 
     if not cards:
-        logger.warning("No cards found in local database!")
-        logger.info("Please import cards first using the data layer demo or bulk import.")
+        print("❌ No cards found in local database!")
+        print("Please import cards first using the data layer demo or bulk import.")
         return
 
-    logger.info(f"Found {len(cards)} cards to vectorize")
+    print(f"✓ Found {len(cards):,} cards to vectorize\n")
 
-    # Show sample cards
-    logger.info("Sample cards:")
-    for card in cards[:3]:
-        logger.info(f"  - {card.name} ({card.type_line})")
+    success_count = 0
+    skipped_count = 0
+    failed_count = 0
 
-    # Vectorize cards
-    logger.info("Embedding cards...")
-    stats = rag_manager.embed_cards(cards)
+    # Use tqdm for progress bar
+    with tqdm(total=len(cards), desc="Vectorizing cards", unit="card") as pbar:
+        for card in cards:
+            try:
+                # Check if already embedded using RAGManager's exists() method
+                if rag_manager.vector_store.exists(card.id):
+                    skipped_count += 1
+                    pbar.set_postfix({"success": success_count, "skipped": skipped_count, "failed": failed_count})
+                    pbar.update(1)
+                    continue
+
+                # Embed the card
+                if rag_manager.embed_card(card):
+                    success_count += 1
+                else:
+                    failed_count += 1
+            except Exception as e:
+                logger.error(f"Failed to embed card {card.name}: {e}")
+                failed_count += 1
+
+            pbar.set_postfix({"success": success_count, "skipped": skipped_count, "failed": failed_count})
+            pbar.update(1)
+
+    stats = {
+        "total": len(cards),
+        "success": success_count,
+        "skipped": skipped_count,
+        "failed": failed_count,
+    }
 
     # Display results
-    logger.info("=" * 60)
-    logger.info("VECTORIZATION COMPLETE")
-    logger.info("=" * 60)
-    logger.info(f"Total cards:     {stats['total']}")
-    logger.info(f"Successfully embedded: {stats['success']}")
-    logger.info(f"Skipped (already embedded): {stats['skipped']}")
-    logger.info(f"Failed:          {stats['failed']}")
+    print("\n" + "=" * 60)
+    print("  VECTORIZATION COMPLETE")
+    print("=" * 60)
+    print(f"Total cards:               {stats['total']:,}")
+    print(f"Successfully embedded:     {stats['success']:,}")
+    print(f"Skipped (already embedded): {stats['skipped']:,}")
+    print(f"Failed:                    {stats['failed']:,}")
 
     # Get RAG stats
     rag_stats = rag_manager.get_stats()
-    logger.info("=" * 60)
-    logger.info("RAG SYSTEM STATISTICS")
-    logger.info("=" * 60)
+    print("\n" + "=" * 60)
+    print("  RAG SYSTEM STATISTICS")
+    print("=" * 60)
     for key, value in rag_stats.items():
-        logger.info(f"{key}: {value}")
-
-    logger.info("=" * 60)
+        if isinstance(value, (int, float)) and value > 1000:
+            print(f"{key}: {value:,}")
+        else:
+            print(f"{key}: {value}")
 
     # Test semantic search
-    logger.info("\nTesting semantic search...")
+    print("\n" + "=" * 60)
+    print("  TESTING SEMANTIC SEARCH")
+    print("=" * 60)
     test_queries = [
         "blue counterspells",
         "card draw effects",
@@ -87,19 +117,19 @@ def main():
     ]
 
     for query in test_queries:
-        logger.info(f"\nQuery: '{query}'")
+        print(f"\nQuery: '{query}'")
         results = rag_manager.search_similar(query, n_results=3)
 
         if results:
-            logger.info(f"  Found {len(results)} results:")
+            print(f"  ✓ Found {len(results)} results:")
             for card_id, score, metadata in results:
-                logger.info(f"    - {metadata.get('name', 'Unknown')} (score: {score:.3f})")
+                print(f"    - {metadata.get('name', 'Unknown')} (score: {score:.3f})")
         else:
-            logger.info("  No results found")
+            print("  ✗ No results found")
 
-    logger.info("\n" + "=" * 60)
-    logger.info("Vectorization complete! Vector database is ready.")
-    logger.info("=" * 60)
+    print("\n" + "=" * 60)
+    print("✓ Vectorization complete! Vector database is ready.")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

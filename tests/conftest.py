@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from mtg_card_app.domain.entities import Card
+from tests.mocks import MockLLMService
 
 
 @pytest.fixture
@@ -71,3 +72,29 @@ def sample_card() -> Card:
         artist="Mike Bierek",
         prices={"usd": "1.50", "eur": "1.20"},
     )
+
+
+@pytest.fixture
+def mock_llm() -> MockLLMService:
+    """Provide a mock LLM service for unit tests.
+
+    Returns:
+        MockLLMService instance with default behavior
+
+    """
+    return MockLLMService()
+
+
+@pytest.fixture
+def mock_llm_with_responses():
+    """Provide a factory for creating mock LLMs with custom responses.
+
+    Returns:
+        Function that creates MockLLMService with custom responses
+
+    """
+
+    def _mock_llm(responses: dict[str, str]) -> MockLLMService:
+        return MockLLMService(responses=responses)
+
+    return _mock_llm

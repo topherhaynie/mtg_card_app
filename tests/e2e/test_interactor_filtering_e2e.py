@@ -1,8 +1,12 @@
-"""Enhanced protocol-based tests for Interactor with filtering and validation.
+"""E2E tests for filter extraction functionality in Interactor.
 
-NOTE: These tests hit the real Ollama LLM service via answer_natural_language_query.
-Mark with @pytest.mark.slow to skip in fast test runs.
-Run with: pytest -m "not slow" to skip these tests.
+NOTE: These are END-TO-END tests that hit:
+- Real Ollama LLM service (~15 seconds per test)
+- Real ChromaDB vector store
+- Real SQLite database
+
+Mark tests with @pytest.mark.e2e to skip them in fast test runs.
+Run with: pytest -m "not e2e" to skip these tests.
 """
 
 import pytest
@@ -27,7 +31,7 @@ def interactor():
 class TestInteractorFiltering:
     """Test interactor with filtering and result validation."""
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_color_filtering_blue(self, interactor) -> None:
         """Test that blue card queries return blue cards."""
         user_query = "Show me blue counterspells"
@@ -41,7 +45,7 @@ class TestInteractorFiltering:
         response_lower = response.lower()
         assert "counterspell" in response_lower or "blue" in response_lower
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_semantic_relevance_card_draw(self, interactor) -> None:
         """Test semantic search returns relevant card draw effects."""
         user_query = "Cards that let me draw extra cards"
@@ -55,7 +59,7 @@ class TestInteractorFiltering:
         # Rhystic Study and Mystic Remora are card draw enchantments in test data
         assert "rhystic" in response_lower or "remora" in response_lower or "draw" in response_lower
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_type_filtering_instant(self, interactor) -> None:
         """Test filtering by card type returns correct results."""
         user_query = "Show me instant speed interaction"
@@ -68,7 +72,7 @@ class TestInteractorFiltering:
         response_lower = response.lower()
         assert "instant" in response_lower or "swords" in response_lower or "counterspell" in response_lower
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_no_results_handling(self, interactor) -> None:
         """Test graceful handling when no results are found."""
         # Query for something very specific that doesn't exist
@@ -82,7 +86,7 @@ class TestInteractorFiltering:
         response_lower = response.lower()
         assert "no" in response_lower or "not found" in response_lower or "try" in response_lower
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_creature_removal(self, interactor) -> None:
         """Test semantic search for creature removal."""
         user_query = "What's the best creature removal?"
@@ -95,7 +99,7 @@ class TestInteractorFiltering:
         response_lower = response.lower()
         assert "swords" in response_lower or "removal" in response_lower or "plowshares" in response_lower
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_combo_pieces(self, interactor) -> None:
         """Test finding combo pieces."""
         user_query = "Cards that work with Isochron Scepter"
@@ -113,7 +117,7 @@ class TestInteractorFiltering:
             or "scepter" in response_lower
         )
 
-    @pytest.mark.slow
+    @pytest.mark.e2e
     def test_response_quality(self, interactor) -> None:
         """Test that responses are detailed and helpful."""
         user_query = "Explain blue counterspells"
