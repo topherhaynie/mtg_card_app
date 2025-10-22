@@ -110,15 +110,16 @@
 - [x] Test config command: `mtg config show` (works, displays configuration)
 - [x] All CLI commands accessible and functional
 
-### Step 1.4: TestPyPI Upload (1 hour)
+### Step 1.4: TestPyPI Upload (1 hour) 📋
 - [ ] Create account at test.pypi.org
 - [ ] Generate API token
 - [ ] Upload: `twine upload --repository testpypi dist/*`
 - [ ] Test install from TestPyPI
 - [ ] Verify README renders correctly
 - [ ] Document any issues
+- [x] **Created comprehensive upload guide** (see PHASE_6_TRACK_3_PYPI_UPLOAD_GUIDE.md)
 
-### Step 1.5: Real PyPI Upload (30 min)
+### Step 1.5: Real PyPI Upload (30 min) 📋
 - [ ] Create account at pypi.org
 - [ ] Generate API token
 - [ ] Final checks (version, README, metadata)
@@ -128,6 +129,9 @@
 - [ ] Update docs to show pip install
 - [ ] Create GitHub release with v0.1.0 tag
 - [ ] Announce! 🎉
+- [x] **Upload process documented with step-by-step guide**
+
+**Note:** Steps 1.4 and 1.5 require PyPI/TestPyPI accounts. Package is ready to upload when accounts are created. See PHASE_6_TRACK_3_PYPI_UPLOAD_GUIDE.md for complete instructions.
 
 ---
 
