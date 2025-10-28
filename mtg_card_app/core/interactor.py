@@ -379,6 +379,7 @@ Response:"""
         *,
         use_cache: bool = True,
         use_filters: bool = True,
+        conversation_history: list[dict[str, str]] | None = None,
     ) -> tuple[list[tuple[Card, float]], str]:
         """Answer a natural language query and return both cards and response.
 
@@ -389,6 +390,7 @@ Response:"""
             query: Natural language query (e.g., "Find me blue counterspells under $5")
             use_cache: Whether to use query cache (default: True)
             use_filters: Whether to extract and apply filters (default: True)
+            conversation_history: Optional list of previous messages for context
 
         Returns:
             Tuple of (cards_with_scores, response_text)
@@ -460,8 +462,20 @@ Response:"""
         
         cards_formatted = "\n\n".join(card_list)
         
+        # Build conversation context if available
+        context_section = ""
+        if conversation_history and len(conversation_history) > 0:
+            context_lines = ["\nPrevious Conversation:"]
+            for msg in conversation_history[:-1]:  # Exclude current query
+                role = "User" if msg["role"] == "user" else "You"
+                content = msg["content"][:150]  # Truncate long messages
+                if len(msg["content"]) > 150:
+                    content += "..."
+                context_lines.append(f"{role}: {content}")
+            context_section = "\n".join(context_lines) + "\n"
+        
         format_prompt = f"""You are a Magic: The Gathering expert assistant.
-
+{context_section}
 User Query: "{query}"{filters_applied}
 
 Available Cards (in order of relevance):
@@ -473,6 +487,7 @@ IMPORTANT RULES:
 3. Reference cards by their [number] (e.g., [1], [2])
 4. Quote actual card text from the descriptions provided
 5. If the query cannot be answered with these cards, say so clearly
+6. Use conversation context for follow-up questions (e.g., "that card" refers to previously mentioned cards)
 
 Provide a helpful response using ONLY these cards."""
 

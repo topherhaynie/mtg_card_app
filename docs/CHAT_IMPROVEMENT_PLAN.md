@@ -156,23 +156,23 @@ Display only LLM text
 ## Implementation Priority
 
 ### Immediate (This Session)
-1. ✅ **Display Card Details** (1-2 hours)
+1. ✅ **Display Card Details** (1-2 hours) - COMPLETE
    - Show cards in panels before LLM response
    - Include oracle text, mana cost, type
    - Add relevance scores
 
-2. ✅ **Constrain LLM Prompt** (30 minutes)
+2. ✅ **Constrain LLM Prompt** (30 minutes) - COMPLETE
    - Rewrite prompt to enforce "ONLY these cards"
    - Add numbered card references
    - Warn against hallucination
 
 ### Short-term (Next Session)
-3. **Conversation Memory** (2-3 hours)
+3. ✅ **Conversation Memory** (2-3 hours) - COMPLETE
    - Store history in session
    - Pass to LLM with each query
    - Add `/history` and `/clear` commands
 
-4. **Card Verification** (1 hour)
+4. **Card Verification** (1 hour) - PENDING
    - Post-process check for fake cards
    - Regenerate if hallucination detected
 
