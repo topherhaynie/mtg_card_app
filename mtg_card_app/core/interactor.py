@@ -368,6 +368,34 @@ Response:"""
             Generated answer from the LLM
 
         """
+        cards_with_scores, response = self.answer_query_with_cards(
+            query, use_cache=use_cache, use_filters=use_filters
+        )
+        return response
+
+    def answer_query_with_cards(
+        self,
+        query: str,
+        *,
+        use_cache: bool = True,
+        use_filters: bool = True,
+    ) -> tuple[list[tuple[Card, float]], str]:
+        """Answer a natural language query and return both cards and response.
+
+        This method is useful when you want to display the cards alongside
+        the LLM response (e.g., in a UI).
+
+        Args:
+            query: Natural language query (e.g., "Find me blue counterspells under $5")
+            use_cache: Whether to use query cache (default: True)
+            use_filters: Whether to extract and apply filters (default: True)
+
+        Returns:
+            Tuple of (cards_with_scores, response_text)
+            - cards_with_scores: List of (Card, relevance_score) tuples
+            - response_text: Generated answer from the LLM
+
+        """
         logger.info("Processing natural language query: %s", query)
 
         # Extract filters if enabled
@@ -378,7 +406,8 @@ Response:"""
             is_cached, cached_result = self.query_cache.get(query, filters) if self.query_cache else (False, None)
             if is_cached:
                 logger.info("Query cache hit")
-                return cached_result
+                # Cache stores only response text, reconstruct with empty cards
+                return ([], cached_result)
             cache_key = (query, filters)
         else:
             cache_key = None
@@ -395,56 +424,66 @@ Response:"""
             if cache_key:
                 if self.query_cache:
                     self.query_cache.set(cache_key[0], result, cache_key[1])
-            return result
+            return ([], result)
 
         # Fetch full card details for the top results
-        cards = []
+        cards_with_scores = []
         for card_id, score, _metadata in search_results:
             card = self.card_data_manager.get_card_by_id(
                 card_id,
                 fetch_if_missing=False,
             )
             if card:
-                cards.append((card, score))
+                cards_with_scores.append((card, score))
 
-        if not cards:
+        if not cards_with_scores:
             result = "Cards were found but could not be retrieved. Please try again."
             if cache_key:
                 if self.query_cache:
                     self.query_cache.set(cache_key[0], result, cache_key[1])
-            return result
+            return ([], result)
 
-        # Build rich context for LLM formatting
-        card_details = []
-        for card, score in cards:
-            details = {
-                "name": card.name,
-                "type": card.type_line,
-                "cmc": card.cmc,
-                "colors": card.colors or [],
-                "text": card.oracle_text or "",
-                "relevance_score": round(score, 3),
-            }
-            if card.power and card.toughness:
-                details["power_toughness"] = f"{card.power}/{card.toughness}"
-            card_details.append(details)
-
-        # LLM formats the response with context
+        # Build improved prompt with strict constraints
         filters_applied = f" (filters applied: {filters})" if filters else ""
-        format_prompt = f"""User query: "{query}"{filters_applied}
+        
+        # Format cards for LLM with numbered references
+        card_list = []
+        for idx, (card, score) in enumerate(cards_with_scores, 1):
+            card_text = f"[{idx}] {card.name}"
+            if card.mana_cost:
+                card_text += f" - {card.mana_cost}"
+            if card.type_line:
+                card_text += f" - {card.type_line}"
+            if card.oracle_text:
+                card_text += f'\n    "{card.oracle_text}"'
+            card_list.append(card_text)
+        
+        cards_formatted = "\n\n".join(card_list)
+        
+        format_prompt = f"""You are a Magic: The Gathering expert assistant.
 
-Relevant MTG cards found (in order of relevance):
-{card_details}
+User Query: "{query}"{filters_applied}
 
-Please provide a helpful, natural response answering the user's query using these cards.
-Include card names, relevant details, and explain why they match the query."""
+Available Cards (in order of relevance):
+{cards_formatted}
+
+IMPORTANT RULES:
+1. Answer ONLY using the cards listed above
+2. DO NOT mention or invent cards not in this list
+3. Reference cards by their [number] (e.g., [1], [2])
+4. Quote actual card text from the descriptions provided
+5. If the query cannot be answered with these cards, say so clearly
+
+Provide a helpful response using ONLY these cards."""
 
         result = self.llm_manager.generate(format_prompt)
+        
         # Cache the result
         if cache_key:
             if self.query_cache:
                 self.query_cache.set(cache_key[0], result, cache_key[1])
-        return result
+        
+        return (cards_with_scores, result)
 
     def _handle_no_results(self, user_query: str, filters: dict[str, Any]) -> str:
         """Handle empty search results with suggestions.

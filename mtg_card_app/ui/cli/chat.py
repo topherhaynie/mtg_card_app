@@ -11,6 +11,10 @@ from rich.prompt import Prompt
 
 from mtg_card_app.core.interactor import Interactor
 from mtg_card_app.core.manager_registry import ManagerRegistry
+from mtg_card_app.ui.cli.card_display import (
+    create_card_reference_guide,
+    display_card_results,
+)
 
 console = Console()
 
@@ -106,10 +110,15 @@ def _handle_query(interactor: Interactor, query: str) -> None:
     """
     try:
         with console.status("[cyan]Thinking...[/cyan]", spinner="dots"):
-            response = interactor.answer_natural_language_query(query)
+            cards_with_scores, response = interactor.answer_query_with_cards(query)
 
-        # Display the response
-        console.print("\n[bold green]Response:[/bold green]")
+        # Display cards first if any were found
+        if cards_with_scores:
+            display_card_results(cards_with_scores, console, title="Found Cards")
+            create_card_reference_guide(len(cards_with_scores), console)
+
+        # Display the LLM response
+        console.print("[bold green]Response:[/bold green]")
         console.print(Markdown(response))
 
     except Exception as e:

@@ -1,18 +1,28 @@
-# MTG Card App# MTG Card App
+# MTG Card App
 
+🎴 **AI-powered Magic: The Gathering assistant for combo discovery and deck building**
 
-
-🎴 **Your AI-powered Magic: The Gathering assistant**An application for finding new MTG card combos.
-
-
-
-An intelligent MTG companion that combines semantic search, LLM reasoning, and conversational interfaces to help you discover cards, build decks, and explore combos through natural language.## Installation
-
-
-
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)### From Source
-
+[![PyPI version](https://img.shields.io/pypi/v/mtg-card-app.svg)](https://pypi.org/project/mtg-card-app/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-100%20passing-green.svg)](https://github.com/topherhaynie/mtg_card_app)
+
+An intelligent MTG companion that combines semantic search, LLM reasoning, and conversational interfaces to help you discover cards, build decks, and explore combos through natural language.
+
+## ✨ Features
+
+- 🤖 **Conversational Chat Interface** - Talk to your MTG assistant naturally
+- 🔍 **Semantic Search** - Find cards by meaning, not just keywords  
+- 🎯 **Combo Discovery** - AI-powered combo detection with 10-factor ranking
+- 🏗️ **Deck Builder** - Build, analyze, and optimize Commander/Modern/Standard decks
+- ⚡ **Multiple LLM Providers** - Ollama (free, local), OpenAI, Anthropic, Gemini, Groq
+- 📊 **Rich Terminal UI** - Beautiful progress bars, tables, and panels
+- 💾 **High Performance** - 35k+ cards with sub-millisecond lookups
+- 🔌 **MCP Integration** - Use with Claude Desktop and other MCP clients
+
+## 🚀 Quick Start
+
+### Installation
 
 Clone the repository and install in development mode:
 

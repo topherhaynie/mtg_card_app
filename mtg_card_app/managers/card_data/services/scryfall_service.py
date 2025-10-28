@@ -260,3 +260,47 @@ class ScryfallCardDataService(CardDataService):
             return self._client.get_bulk_data(bulk_type=bulk_type)
         except Exception:
             return None
+
+    def export_to_path(self, path: str) -> bool:
+        """Export Scryfall data (not applicable for API-based service).
+
+        Scryfall is an API-based service without local storage to export.
+        This method exists to satisfy the CardDataService interface but
+        always returns False since there's no data to export.
+
+        Args:
+            path: Destination path (unused)
+
+        Returns:
+            False (Scryfall API has no data to export)
+
+        """
+        return False
+
+    def import_from_path(self, path: str) -> bool:
+        """Import data to Scryfall (not applicable for API-based service).
+
+        Scryfall is an API-based service that cannot import external data.
+        This method exists to satisfy the CardDataService interface but
+        always returns False.
+
+        Args:
+            path: Source path (unused)
+
+        Returns:
+            False (Scryfall API cannot import data)
+
+        """
+        return False
+
+    def get_last_update_date(self) -> str | None:
+        """Get last update date (not applicable for API-based service).
+
+        Scryfall API doesn't track local update dates since it's always current.
+        This method exists to satisfy the CardDataService interface.
+
+        Returns:
+            None (API-based services don't have "last update" dates)
+
+        """
+        return None
