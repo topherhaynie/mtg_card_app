@@ -210,4 +210,6 @@ __marimo__/
 # MTG Card App data files
 data/
 *.json.bak
+*.bak
+*.bak2
 .DS_Store
