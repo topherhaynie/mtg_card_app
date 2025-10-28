@@ -1,5 +1,13 @@
 # Docker Guide for MTG Card App
 
+## Image Size
+
+The Docker image has been optimized for size while maintaining full functionality:
+
+- **Size**: 1.44 GB (down from 1.93 GB unoptimized)
+- **Optimizations**: CPU-only PyTorch, multi-stage build, cleanup of caches and test files
+- **Base**: Python 3.11 Slim (Debian-based for broad compatibility)
+
 ## Quick Start
 
 ### Using Docker Compose (Recommended)

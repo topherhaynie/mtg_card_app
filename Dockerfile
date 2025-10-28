@@ -1,4 +1,23 @@
-# Multi-stage Dockerfile for MTG Card App
+# Multi-stage Dockerfile fRUN pip install --no-cache-dir -e . && \
+    # Replace GPU PyTorch with CPU-only version (saves ~600 MB)
+    pip uninstall -y torch && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    # Safe cleanup - documentation and build artifacts
+    find /app/venv -type f -name "*.md" -delete 2>/dev/null || true && \
+    find /app/venv -type f -name "*.rst" -delete 2>/dev/null || true && \
+    find /app/venv -type f -name "README*" ! -name "*.py" -delete 2>/dev/null || true && \
+    find /app/venv -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) -delete 2>/dev/null || true && \
+    find /app/venv -type d -name "examples" -exec rm -rf {} + 2>/dev/null || true && \
+    # Remove large unused packages
+    rm -rf /app/venv/lib/python3.11/site-packages/kubernetes* && \
+    # Clean up standard items
+    find /app/venv -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -name "*.pyc" -delete && \
+    find /app/venv -name "*.pyo" -delete && \
+    # Remove pip cache
+    rm -rf /root/.cache/pipApp
 # Optimized for size and security
 
 # Stage 1: Builder - compile dependencies
@@ -22,8 +41,20 @@ RUN python -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
 # Install the package and dependencies
+# Use CPU-only PyTorch to save ~600 MB
 COPY . .
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e . && \
+    # Replace GPU PyTorch with CPU-only version (saves ~600 MB)
+    pip uninstall -y torch && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    # Clean up unnecessary files
+    find /app/venv -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/venv -name "*.pyc" -delete && \
+    find /app/venv -name "*.pyo" -delete && \
+    # Remove pip cache
+    rm -rf /root/.cache/pip
 
 # Stage 2: Runtime - minimal image
 FROM python:3.11-slim
