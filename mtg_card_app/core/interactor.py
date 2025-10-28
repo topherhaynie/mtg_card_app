@@ -67,6 +67,7 @@ class Interactor:
         llm_manager,
         db_manager=None,
         query_cache=None,
+        combo_validator=None,
         # Add other managers/services as needed
     ):
         """Initialize the interactor with all dependencies explicitly.
@@ -77,6 +78,7 @@ class Interactor:
             llm_manager: LLMManager instance
             db_manager: DatabaseManager instance (optional)
             query_cache: QueryCache instance (optional)
+            combo_validator: ComboValidator instance (optional)
 
         """
         self.card_data_manager = card_data_manager
@@ -84,6 +86,7 @@ class Interactor:
         self.llm_manager = llm_manager
         self.db_manager = db_manager
         self.query_cache = query_cache
+        self.combo_validator = combo_validator
         logger.info("Initialized Interactor with explicit dependencies")
 
     # ===== Card Operations =====
@@ -448,6 +451,18 @@ Response:"""
         # Build improved prompt with strict constraints
         filters_applied = f" (filters applied: {filters})" if filters else ""
         
+        # Validate combo if combo validator is available and query seems combo-related
+        combo_validation = None
+        is_combo_query = any(keyword in query.lower() for keyword in [
+            "combo", "infinite", "synergy", "work with", "interact", "together"
+        ])
+        
+        if self.combo_validator and is_combo_query and len(cards_with_scores) >= 2:
+            # Validate the top cards as a potential combo
+            cards_to_validate = [card for card, _ in cards_with_scores[:3]]  # Check top 3
+            combo_validation = self.combo_validator.validate_combo(cards_to_validate)
+            logger.info(f"Combo validation: {combo_validation['confidence']:.2%} confidence")
+        
         # Format cards for LLM with numbered references
         card_list = []
         for idx, (card, score) in enumerate(cards_with_scores, 1):
@@ -461,6 +476,20 @@ Response:"""
             card_list.append(card_text)
         
         cards_formatted = "\n\n".join(card_list)
+        
+        # Add combo validation context if available
+        validation_context = ""
+        if combo_validation:
+            if combo_validation["is_known_combo"]:
+                validation_context = f"\n\nNOTE: These cards form a known combo: '{combo_validation['known_combo_name']}' (High confidence)\n"
+            elif combo_validation["valid"]:
+                confidence_pct = combo_validation["confidence"] * 100
+                validation_context = f"\n\nNOTE: Combo feasibility analysis shows {confidence_pct:.0f}% confidence. "
+                if combo_validation["warnings"]:
+                    validation_context += f"Considerations: {'; '.join(combo_validation['warnings'][:2])}\n"
+            else:
+                validation_context = f"\n\nNOTE: These cards show limited synergy (confidence: {combo_validation['confidence']:.0%}). "
+                validation_context += "Consider explaining what additional pieces or conditions are needed.\n"
         
         # Build conversation context if available
         context_section = ""
@@ -479,7 +508,7 @@ Response:"""
 User Query: "{query}"{filters_applied}
 
 Available Cards (in order of relevance):
-{cards_formatted}
+{cards_formatted}{validation_context}
 
 IMPORTANT RULES:
 1. Answer ONLY using the cards listed above
@@ -488,6 +517,7 @@ IMPORTANT RULES:
 4. Quote actual card text from the descriptions provided
 5. If the query cannot be answered with these cards, say so clearly
 6. Use conversation context for follow-up questions (e.g., "that card" refers to previously mentioned cards)
+7. If combo validation notes are provided above, incorporate that analysis into your response
 
 Provide a helpful response using ONLY these cards."""
 
@@ -525,7 +555,11 @@ Provide a helpful response using ONLY these cards."""
         *,
         use_cache: bool = True,
     ) -> str:
-        """Find potential combo pieces for a given card using semantic similarity.
+        """Find potential combo pieces for a given card using LLM-powered analysis.
+        
+        NEW APPROACH: Use LLM to understand mechanics, then search with multiple
+        targeted queries. This leverages the LLM's understanding of Magic's nuanced
+        wording to find synergies that pure semantic search would miss.
 
         Args:
             card_name: Name of the card to find combos for
@@ -536,11 +570,11 @@ Provide a helpful response using ONLY these cards."""
             LLM-generated analysis of potential combo pieces
 
         """
-        logger.info("Finding combo pieces for: %s", card_name)
+        logger.info("Finding combo pieces for: %s (LLM-powered analysis)", card_name)
 
         # Check cache first if enabled
         if use_cache:
-            cache_query = f"combo_pieces:{card_name}:{n_results}"
+            cache_query = f"combo_pieces_v2:{card_name}:{n_results}"  # v2 to invalidate old cache
             is_cached, cached_result = self.query_cache.get(cache_query) if self.query_cache else (False, None)
             if is_cached:
                 logger.info("Query cache hit")
@@ -554,30 +588,38 @@ Provide a helpful response using ONLY these cards."""
         if not card:
             return f"Card '{card_name}' not found in database."
 
-        # Build a combo-focused search query
-        combo_query = self._build_combo_query(card)
-        logger.debug("Combo query: %s", combo_query)
+        # STEP 1: Use LLM to analyze card mechanics
+        logger.info("Step 1: LLM analyzing card mechanics...")
+        llm_analysis = self._analyze_card_mechanics_with_llm(card)
+        logger.debug(f"LLM identified mechanics: {llm_analysis['mechanics']}")
+        logger.debug(f"LLM search queries: {llm_analysis['search_queries']}")
 
-        # Find synergistic cards using semantic search
-        search_results = self.rag_manager.search_similar(
-            query=combo_query,
-            n_results=n_results + 1,  # +1 to account for the base card itself
-        )
-
-        # Filter out the base card from results
-        combo_cards = []
-        for card_id, score, _metadata in search_results:
-            if card_id == card.id:
+        # STEP 2: Execute multiple targeted searches based on LLM's understanding
+        all_candidates = {}  # card_id -> (card, best_score, query_that_found_it)
+        
+        # Search with each LLM-generated query
+        for search_query in llm_analysis['search_queries'][:6]:  # Top 6 queries
+            if not search_query or len(search_query) < 3:
                 continue
-            combo_card = self.card_data_manager.get_card_by_id(
-                card_id,
-                fetch_if_missing=False,
+            logger.debug(f"Searching with query: {search_query}")
+            results = self.rag_manager.search_similar(
+                query=search_query,
+                n_results=5,
             )
-            if combo_card:
-                combo_cards.append((combo_card, score))
+            for card_id, score, _metadata in results:
+                if card_id == card.id:
+                    continue
+                if card_id not in all_candidates or score > all_candidates[card_id][1]:
+                    combo_card = self.card_data_manager.get_card_by_id(card_id, fetch_if_missing=False)
+                    if combo_card:
+                        all_candidates[card_id] = (combo_card, score, search_query)
 
-        if not combo_cards:
+        if not all_candidates:
             return f"No combo pieces found for {card_name}. This card may work well on its own."
+
+        # STEP 3: Sort by score and take top N
+        sorted_candidates = sorted(all_candidates.values(), key=lambda x: x[1], reverse=True)
+        top_candidates = sorted_candidates[:n_results]
 
         # Build context for LLM analysis
         base_card_info = {
@@ -589,7 +631,7 @@ Provide a helpful response using ONLY these cards."""
         }
 
         combo_details = []
-        for combo_card, score in combo_cards[:n_results]:
+        for combo_card, score, query_used in top_candidates:
             details = {
                 "name": combo_card.name,
                 "type": combo_card.type_line,
@@ -597,25 +639,32 @@ Provide a helpful response using ONLY these cards."""
                 "colors": combo_card.colors or [],
                 "text": combo_card.oracle_text or "",
                 "synergy_score": round(score, 3),
+                "found_via": query_used,
             }
             combo_details.append(details)
 
-        # Ask LLM to analyze and explain the combos
+        # STEP 4: Ask LLM to validate and explain the mechanical synergies
+        # This is where the LLM shines - understanding WHY cards combo
         combo_prompt = f"""You are an expert Magic: The Gathering player analyzing card combos.
 
 Base Card:
 {base_card_info}
 
+Your Earlier Analysis:
+Mechanics: {', '.join(llm_analysis['mechanics'][:3])}
+Synergies: {', '.join(llm_analysis['synergies'][:3])}
+
 Potential Combo Pieces (ordered by synergy):
 {combo_details}
 
-For each combo piece, explain:
-1. How it synergizes with {card.name}
-2. What the combo accomplishes (infinite mana, infinite damage, card advantage, etc.)
-3. Any additional pieces needed to complete the combo
-4. Power level assessment (casual, competitive, cEDH-viable)
+For each combo piece, explain the ACTUAL MECHANICAL INTERACTION:
+1. How does it synergize with {card.name}? (Be specific about game rules and timing)
+2. What does the combo accomplish? (infinite mana, infinite damage, card advantage, etc.)
+3. Are there any additional pieces needed?
+4. Power level: casual, competitive, or cEDH-viable
 
-Provide a clear, organized response that helps players understand these combos."""
+IMPORTANT: Only describe real mechanical synergies. If a card doesn't actually combo well, say so.
+Be honest about which combos work and which don't."""
 
         answer = self.llm_manager.generate(combo_prompt)
         # Cache the result if enabled
@@ -624,8 +673,112 @@ Provide a clear, organized response that helps players understand these combos."
                 self.query_cache.set(cache_key, answer)
         return answer
 
+    def _analyze_card_mechanics_with_llm(self, card: Card) -> dict[str, Any]:
+        """Use LLM to deeply analyze a card's combo potential.
+        
+        This is the KEY to finding novel combos - the LLM understands Magic's
+        nuanced wording and can identify mechanical synergies that semantic
+        search alone cannot find.
+        
+        Args:
+            card: Card to analyze
+            
+        Returns:
+            Dictionary with mechanics, search_queries, and combo_patterns
+        """
+        analysis_prompt = f"""You are an expert Magic: The Gathering combo analyst. Analyze this card for combo potential.
+
+Card: {card.name}
+Type: {card.type_line}
+Mana Cost: {card.mana_cost}
+Oracle Text: {card.oracle_text}
+
+CRITICAL: Your goal is to find cards that CREATE COMBOS with this card, not cards that do similar things.
+
+Step 1: Understand what THIS card does
+{card.name} does: [analyze the oracle text]
+
+Step 2: Identify what would CREATE AN INFINITE LOOP or POWERFUL SYNERGY
+- If this has a TAP ability, you need UNTAP effects for infinite loops
+- If this COPIES spells, you need cheap/powerful spells to copy repeatedly  
+- If this has ETB triggers, you need FLICKER/BLINK to trigger repeatedly
+- If this UNTAPS things, you need tap abilities that generate value
+- If this SACRIFICES, you need recursion/death triggers
+
+Step 3: Generate search queries for ORACLE TEXT of combo pieces
+Think: "What exact words appear on cards that would combo with this?"
+
+EXAMPLE for a card with tap abilities:
+- "untap target artifact" (exact phrase)
+- "untap all permanents" (exact phrase)
+- "untap each artifact" (exact phrase)
+
+EXAMPLE for a card that copies instants:
+- "instant" and "mana value 1" (to find cheap instants)
+- "untap all" (to untap this card for infinite copies)
+- "target instant" (instants that interact with instants)
+
+Your queries should be 3-8 words of ACTUAL ORACLE TEXT that would appear on combo pieces.
+
+SEARCH_QUERIES:
+- [oracle text pattern 1]
+- [oracle text pattern 2]
+- [oracle text pattern 3]
+- [oracle text pattern 4]
+- [oracle text pattern 5]
+- [oracle text pattern 6]"""
+
+        try:
+            response = self.llm_manager.generate(analysis_prompt)
+            
+            # Parse search queries from response
+            # The LLM might output them in various formats, so be flexible
+            search_queries = []
+            
+            for line in response.split('\n'):
+                line = line.strip()
+                # Look for lines starting with "-" (list items)
+                if line.startswith('-'):
+                    query = line.lstrip('- ').strip()
+                    # Remove quotes and extra formatting
+                    query = query.strip('"').strip("'").strip()
+                    if query and len(query) > 3:
+                        search_queries.append(query)
+                # Also look for numbered lists like "1." or "2."
+                elif len(line) > 3 and line[0].isdigit() and line[1:3] in ['. ', ') ']:
+                    # Extract everything after the number
+                    query = line[2:].strip() if line[1] == '.' else line[3:].strip()
+                    # Remove quotes and anything in parentheses (explanations)
+                    query = query.strip('"').strip("'").strip()
+                    # Remove parenthetical explanations
+                    if '(' in query:
+                        query = query[:query.index('(')].strip()
+                    if query and len(query) > 3:
+                        search_queries.append(query)
+            
+            return {
+                'mechanics': [],
+                'synergies': [],
+                'search_queries': search_queries,
+                'raw_response': response,
+            }
+            
+        except Exception as e:
+            logger.error(f"LLM analysis failed: {e}")
+            # Fallback to simple query
+            return {
+                'mechanics': [],
+                'synergies': [],
+                'search_queries': [card.oracle_text[:100] if card.oracle_text else card.name],
+                'known_combos': [],
+                'raw_response': '',
+            }
+
     def _build_combo_query(self, card: Card) -> str:
-        """Build a semantic search query to find combo pieces.
+        """Build a targeted search query for finding combo pieces.
+
+        This method analyzes the card's mechanics and builds a search query
+        that will help find synergistic cards using semantic search.
 
         Args:
             card: Card entity to find combos for
@@ -635,43 +788,151 @@ Provide a clear, organized response that helps players understand these combos."
 
         """
         # Extract key mechanics from oracle text
-        oracle_text = card.oracle_text or ""
-        card_type = card.type_line.lower()
+        oracle_text = (card.oracle_text or "").lower()
+        card_type = (card.type_line or "").lower()
+        card_name = card.name.lower()
 
-        # Build a query that emphasizes synergistic mechanics
-        query_parts = [f"Cards that synergize with {card.name}"]
-
-        # Add type-specific synergies
+        # Start with explicit combo synergy focus
+        query_parts = []
+        
+        # Analyze the card's key mechanics deeply
+        mechanics_found = []
+        
+        # UNTAP EFFECTS - Extremely valuable for combo potential
+        if any(word in oracle_text for word in ["untap", "untaps"]):
+            mechanics_found.append("untap")
+            # Untap effects want tap abilities, mana, or activated abilities
+            query_parts.append("tap abilities activated abilities mana rocks mana dorks")
+            query_parts.append("untap all permanents artifacts creatures lands")
+        
+        # TAP ABILITIES - Want untap effects
+        if ": " in oracle_text and ("tap" in oracle_text or "{t}" in oracle_text):
+            mechanics_found.append("tap_ability")
+            query_parts.append("untap permanents artifacts creatures")
+            query_parts.append("ways to untap repeatedly infinite activations")
+        
+        # COPY EFFECTS - Want spells to copy
+        if any(word in oracle_text for word in ["copy", "copies"]):
+            mechanics_found.append("copy")
+            query_parts.append("instants sorceries spells cast triggers")
+            query_parts.append("storm cascade copy spell effects")
+        
+        # IMPRINT/EXILE - Cards like Isochron Scepter
+        if any(word in oracle_text for word in ["imprint", "exile", "exiled"]):
+            if "instant" in oracle_text or "sorcery" in oracle_text:
+                mechanics_found.append("imprint_spell")
+                query_parts.append("cheap instants low mana cost instant spells")
+                query_parts.append("untap effects dramatic reversal reset")
+        
+        # ENTERS THE BATTLEFIELD - Want flicker/blink/recursion
+        if any(word in oracle_text for word in ["enters the battlefield", "etb", "when ~ enters"]):
+            mechanics_found.append("etb")
+            query_parts.append("flicker blink bounce return to hand")
+            query_parts.append("recurring nightmare cloudstone curio")
+        
+        # SACRIFICE OUTLETS - Want recursion/death triggers
+        if any(word in oracle_text for word in ["sacrifice", "sacrifices"]):
+            mechanics_found.append("sacrifice")
+            query_parts.append("death triggers dies creature dies")
+            query_parts.append("reanimate return from graveyard persist undying")
+        
+        # DRAW EFFECTS - Want discard or deck manipulation
+        if "draw" in oracle_text and "card" in oracle_text:
+            mechanics_found.append("draw")
+            query_parts.append("discard effects wheel effects library manipulation")
+            query_parts.append("laboratory maniac thassa's oracle jace win condition")
+        
+        # MILL - Want graveyard synergies
+        if any(word in oracle_text for word in ["mill", "put", "top"]) and "library" in oracle_text:
+            mechanics_found.append("mill")
+            query_parts.append("graveyard matters reanimation flashback dredge")
+            query_parts.append("self-mill fill graveyard")
+        
+        # STORM - Want cheap spells
+        if "storm" in oracle_text:
+            mechanics_found.append("storm")
+            query_parts.append("zero mana spells cheap cantrips rituals")
+            query_parts.append("cost reduction spell cost reducers")
+        
+        # TOKENS - Want sacrifice outlets or token doublers
+        if "token" in oracle_text or "create" in oracle_text:
+            mechanics_found.append("tokens")
+            query_parts.append("sacrifice outlets altar ashnod's altar")
+            query_parts.append("token doublers parallel lives doubling season")
+        
+        # MANA PRODUCTION - Want infinite mana sinks
+        if any(word in oracle_text for word in ["add", "mana"]) and any(c in oracle_text for c in ["{", "}"]):
+            mechanics_found.append("mana")
+            query_parts.append("mana sinks infinite mana outlets")
+            query_parts.append("untap lands mana rocks mana dorks")
+        
+        # LIFE GAIN - Want life payment or damage conversion
+        if "gain" in oracle_text and "life" in oracle_text:
+            mechanics_found.append("lifegain")
+            query_parts.append("pay life aetherflux reservoir lifegain payoffs")
+        
+        # COUNTER/REMOVAL - Want spell recursion
+        if "counter target" in oracle_text:
+            mechanics_found.append("counterspell")
+            query_parts.append("spell recursion isochron scepter fork copy instant")
+        
+        # If we found specific mechanics, add targeted searches
+        if mechanics_found:
+            # Add the specific mechanic combinations
+            if "untap" in mechanics_found and "tap_ability" in mechanics_found:
+                query_parts.append("infinite combo untap loop")
+            if "copy" in mechanics_found:
+                query_parts.append("infinite copies fork effect")
+            if "etb" in mechanics_found and "sacrifice" in mechanics_found:
+                query_parts.append("sacrifice loop recursive combo")
+        
+        # Add card type synergies
         if "artifact" in card_type:
-            query_parts.append("artifact synergies")
+            query_parts.append("artifact synergies untap artifacts artifact combo")
         if "enchantment" in card_type:
-            query_parts.append("enchantment synergies")
+            query_parts.append("enchantment synergies enchantress effects")
+        if "creature" in card_type:
+            query_parts.append("creature synergies blink effects flicker")
         if "instant" in card_type or "sorcery" in card_type:
-            query_parts.append("spell synergies")
-
-        # Look for key combo keywords in oracle text
-        combo_keywords = [
-            "untap",
-            "copy",
-            "cast",
-            "enters",
-            "exile",
-            "sacrifice",
-            "draw",
-            "tap",
-            "activated ability",
-            "storm",
-            "flashback",
-        ]
-
-        for keyword in combo_keywords:
-            if keyword in oracle_text.lower():
-                query_parts.append(f"{keyword} effects")
-
-        # Include the oracle text for semantic matching
-        query_parts.append(oracle_text[:200])  # Limit length
-
-        return " ".join(query_parts)
+            query_parts.append("spell copy effects storm spell recursion")
+        
+        # Add specific combo patterns for well-known cards
+        # These are PRIORITIZED - for known combos, use ONLY the card names
+        # because adding mechanics dilutes the semantic search
+        known_combos = {
+            "isochron scepter": "dramatic reversal",
+            "thassa's oracle": "demonic consultation tainted pact",
+            "kiki-jiki": "deceiver exarch pestermite zealous conscripts",
+            "splinter twin": "deceiver exarch pestermite",
+            "food chain": "misthollow griffin eternal scourge",
+            "worldgorger dragon": "animate dead dance of the dead necromancy",
+        }
+        
+        known_combo_found = False
+        for known_card, combo_query in known_combos.items():
+            if known_card in card_name:
+                # For known combos, ONLY search for the specific card names
+                # Don't dilute with mechanics - semantic search works better with names alone
+                query_parts = [combo_query]
+                known_combo_found = True
+                break
+        
+        # Only add oracle text if no specific mechanics found (fallback)
+        if not mechanics_found and not known_combo_found:
+            query_parts.append(oracle_text[:150])
+        
+        # Build final query emphasizing combo potential
+        final_query = " ".join(query_parts)
+        
+        # Add explicit combo framing (but keep it short for known combos)
+        if known_combo_found:
+            final_query = f"{final_query}"  # No prefix for known combos - keep it focused
+        else:
+            final_query = f"combo pieces that work with {card.name}: {final_query}"
+        
+        logger.debug(f"Built combo query for {card.name}: mechanics={mechanics_found}")
+        
+        return final_query
 
     def initialize_with_sample_data(self) -> dict[str, Any]:
         """Initialize the system with some sample MTG cards for testing.

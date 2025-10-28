@@ -177,14 +177,14 @@ Display only LLM text
    - Regenerate if hallucination detected
 
 ### Medium-term (Phase 7)
-5. **Combo Validation** (4-6 hours)
+5. ✅ **Combo Validation** (4-6 hours) - COMPLETE
    - Basic rules checking
    - Known combo database
    - Confidence scoring
 
-6. **Enhanced Display** (2-3 hours)
+6. **Enhanced Display** (2-3 hours) - PENDING
    - Card images (Scryfall)
-   - Color-coded mana symbols
+   - Color-coded mana symbols (DONE - Phase 1 & 2)
    - Price information
    - Legality indicators
 

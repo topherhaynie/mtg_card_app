@@ -4,11 +4,15 @@ This module provides a conversational REPL interface where users can ask
 questions and get responses powered by the LLM and RAG system.
 """
 
+import json
+from pathlib import Path
+
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
 
+from mtg_card_app.core.combo_validator import ComboValidator
 from mtg_card_app.core.conversation import ConversationHistory
 from mtg_card_app.core.interactor import Interactor
 from mtg_card_app.core.manager_registry import ManagerRegistry
@@ -29,10 +33,24 @@ def start_chat(single_query: str | None = None) -> None:
     """
     # Initialize the interactor
     registry = ManagerRegistry.get_instance()
+    
+    # Load known combos for validation
+    combo_validator = None
+    try:
+        combo_file = Path("data/combos.json")
+        if combo_file.exists():
+            with open(combo_file, "r") as f:
+                combo_data = json.load(f)
+                known_combos = combo_data.get("combos", {})
+                combo_validator = ComboValidator(known_combos=known_combos)
+    except Exception as e:
+        console.print(f"[yellow]Note: Combo validation unavailable ({e})[/yellow]")
+    
     interactor = Interactor(
         card_data_manager=registry.card_data_manager,
         rag_manager=registry.rag_manager,
         llm_manager=registry.llm_manager,
+        combo_validator=combo_validator,
     )
 
     # Initialize conversation history
