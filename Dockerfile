@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile fRUN pip install --no-cache-dir -e . && \
-    # Replace GPU PyTorch with CPU-only version (saves ~600 MB)
-    pip uninstall -y torch && \
+# Replace GPU PyTorch with CPU-only version (saves ~600 MB)
+pip uninstall -y torch && \
     pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     # Safe cleanup - documentation and build artifacts
     find /app/venv -type f -name "*.md" -delete 2>/dev/null || true && \
@@ -101,9 +101,9 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Labels for metadata
 LABEL org.opencontainers.image.title="MTG Card App" \
-      org.opencontainers.image.description="AI-powered Magic: The Gathering combo finder" \
-      org.opencontainers.image.version="0.1.0" \
-      org.opencontainers.image.authors="topherhaynie" \
-      org.opencontainers.image.url="https://github.com/topherhaynie/mtg_card_app" \
-      org.opencontainers.image.source="https://github.com/topherhaynie/mtg_card_app" \
-      org.opencontainers.image.licenses="MIT"
+    org.opencontainers.image.description="AI-powered Magic: The Gathering combo finder" \
+    org.opencontainers.image.version="0.1.0" \
+    org.opencontainers.image.authors="topherhaynie" \
+    org.opencontainers.image.url="https://github.com/topherhaynie/mtg_card_app" \
+    org.opencontainers.image.source="https://github.com/topherhaynie/mtg_card_app" \
+    org.opencontainers.image.licenses="MIT"
