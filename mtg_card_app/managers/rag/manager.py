@@ -61,25 +61,111 @@ class RAGManager:
         logger.info("Initialized RAGManager with injected services")
 
     def _build_card_text(self, card: Card) -> str:
-        """Build searchable text representation of a card.
+        """Build enriched searchable text representation of a card.
 
-        Combines relevant card fields for embedding:
+        Combines relevant card fields for embedding with ENRICHED context
+        to help cards with short Oracle text (like Dramatic Reversal) have
+        better semantic embeddings.
+
+        STRATEGY: Put enriched mechanics FIRST for emphasis, then details.
+
+        Includes:
+        - Enriched type categories (instant, creature, artifact, etc.) - FIRST
+        - Detected mechanics - FIRST  
         - Name
         - Type line
         - Oracle text
         - Keywords
+        - Colors
+        - CMC
 
         Args:
             card: Card entity
 
         Returns:
-            Combined text string
+            Combined text string with enriched context
 
         """
-        parts = [
-            f"Name: {card.name}",
-            f"Type: {card.type_line}",
-        ]
+        parts = []
+        
+        # FIRST: Add enriched card type context for MAXIMUM semantic weight
+        # This helps queries like "instant untap" match instant cards better
+        type_line_lower = (card.type_line or "").lower()
+        card_types = []
+        if "instant" in type_line_lower:
+            card_types.append("instant")
+            card_types.append("instant spell")
+        if "sorcery" in type_line_lower:
+            card_types.append("sorcery")
+            card_types.append("sorcery spell")
+        if "creature" in type_line_lower:
+            card_types.append("creature")
+            card_types.append("creature permanent")
+        if "artifact" in type_line_lower:
+            card_types.append("artifact")
+            card_types.append("artifact permanent")
+        if "enchantment" in type_line_lower:
+            card_types.append("enchantment")
+            card_types.append("enchantment permanent")
+        if "planeswalker" in type_line_lower:
+            card_types.append("planeswalker")
+        if "land" in type_line_lower:
+            card_types.append("land")
+        
+        mechanics = []
+        if card.oracle_text:
+            oracle_lower = card.oracle_text.lower()
+            
+            # Detect mechanics and add them
+            if "untap" in oracle_lower:
+                if "all" in oracle_lower or "each" in oracle_lower:
+                    mechanics.append("mass untap")
+                    mechanics.append("untap all")
+                    mechanics.append("untap effect")
+                else:
+                    mechanics.append("untap")
+                    mechanics.append("untap effect")
+            
+            if "tap" in oracle_lower and ":" in card.oracle_text:
+                mechanics.append("tap ability")
+                mechanics.append("activated ability")
+            
+            if "draw" in oracle_lower and "card" in oracle_lower:
+                mechanics.append("draw cards")
+                mechanics.append("card draw")
+            
+            if "copy" in oracle_lower:
+                mechanics.append("copy")
+                mechanics.append("copy effect")
+            
+            if "enters" in oracle_lower or "etb" in oracle_lower:
+                mechanics.append("enters battlefield")
+                mechanics.append("etb trigger")
+            
+            if "flicker" in oracle_lower or (("exile" in oracle_lower) and ("return" in oracle_lower)):
+                mechanics.append("flicker")
+                mechanics.append("blink effect")
+            
+            if "counter target" in oracle_lower:
+                mechanics.append("counter")
+                mechanics.append("counterspell")
+            
+            if "destroy" in oracle_lower:
+                mechanics.append("destroy")
+                mechanics.append("removal")
+            
+            if "search your library" in oracle_lower:
+                mechanics.append("tutor")
+                mechanics.append("search library")
+        
+        # BUILD: Mechanics and types FIRST for maximum semantic weight
+        if card_types or mechanics:
+            combined_tags = card_types + mechanics
+            parts.append(f"{' '.join(combined_tags)}")
+        
+        # THEN add standard card info
+        parts.append(f"Name: {card.name}")
+        parts.append(f"Type: {card.type_line}")
 
         if card.oracle_text:
             parts.append(f"Text: {card.oracle_text}")
@@ -90,6 +176,10 @@ class RAGManager:
         if card.color_identity:
             colors = ", ".join(card.color_identity)
             parts.append(f"Colors: {colors}")
+        
+        # Add CMC for better mana value searches
+        if card.cmc is not None:
+            parts.append(f"Mana value: {int(card.cmc)}")
 
         return " | ".join(parts)
 
