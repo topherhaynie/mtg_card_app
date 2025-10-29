@@ -749,26 +749,74 @@ Provide a helpful response using ONLY these cards."""
 
         # STEP 5: Ask LLM to validate and explain the mechanical synergies
         # This is where the LLM shines - understanding WHY cards combo
-        combo_prompt = f"""You are an expert Magic: The Gathering player analyzing card combos.
+        
+        # Build enhanced context about the base card's combo potential
+        base_card_oracle = card.oracle_text or ""
+        base_card_context = ""
+        
+        # Check for common combo patterns in the base card
+        if "{T}" in base_card_oracle or "Tap:" in base_card_oracle:
+            base_card_context += "\nNOTE: This card has a tap ability. Cards that UNTAP it can create infinite loops if you can generate net mana."
+        
+        if "copy" in base_card_oracle.lower() and "exiled" in base_card_oracle.lower():
+            base_card_context += "\nNOTE: This card COPIES a spell. If the copied spell can UNTAP this card, you can create an infinite loop."
+        
+        if "enters the battlefield" in base_card_oracle.lower() or "enters" in base_card_oracle.lower():
+            base_card_context += "\nNOTE: This card has an ETB effect. Cards that can FLICKER/BLINK it create repeated triggers."
+        
+        combo_prompt = f"""You are an expert Magic: The Gathering combo analyst. Analyze these potential combo pieces.
 
 Base Card:
 {base_card_info}
+{base_card_context}
 
 Your Earlier Analysis:
-Mechanics: {', '.join(llm_analysis['mechanics'][:3])}
-Synergies: {', '.join(llm_analysis['synergies'][:3])}
+Mechanics: {', '.join(llm_analysis['mechanics'][:3]) if llm_analysis['mechanics'] else 'N/A'}
+Synergies: {', '.join(llm_analysis['synergies'][:3]) if llm_analysis['synergies'] else 'N/A'}
 
 Potential Combo Pieces (ordered by synergy):
 {combo_details}
 
-For each combo piece, explain the ACTUAL MECHANICAL INTERACTION:
-1. How does it synergize with {card.name}? (Be specific about game rules and timing)
-2. What does the combo accomplish? (infinite mana, infinite damage, card advantage, etc.)
-3. Are there any additional pieces needed?
-4. Power level: casual, competitive, or cEDH-viable
+For each combo piece, analyze the ACTUAL MECHANICAL INTERACTION:
 
-IMPORTANT: Only describe real mechanical synergies. If a card doesn't actually combo well, say so.
-Be honest about which combos work and which don't."""
+1. **How does it combo with {card.name}?**
+   - Be SPECIFIC about the sequence of actions
+   - If it creates an INFINITE LOOP, explain the loop clearly
+   - Example: "Tap Scepter to copy spell → spell untaps Scepter → repeat infinitely"
+
+2. **What does the combo accomplish?**
+   - Infinite mana? Infinite casts? Infinite damage? Card advantage?
+   - Be precise about what resource is generated
+
+3. **Are there any additional pieces needed?**
+   - Does it require mana rocks? Creatures? Other setup?
+   - CRITICAL FOR TAP ABILITY LOOPS: If {card.name} has an activation cost and this creates an infinite loop by untapping, you MUST account for mana requirements:
+     * Isochron Scepter costs {{2}} to activate → requires mana rocks producing ≥{{2}} (Sol Ring, Arcane Signet, Thought Vessel)
+     * Without mana rocks: Can't pay activation cost repeatedly → NOT infinite
+   - BE SPECIFIC: If it needs mana rocks, say which types and why
+   - Example: "Yes, needs mana rocks producing ≥{{2}} (Sol Ring, Arcane Signet, etc.) to pay for repeated activations"
+
+4. **Power level**: casual, competitive, or cEDH-viable
+
+CRITICAL RULES FOR INFINITE LOOPS:
+- If {card.name} has a TAP ABILITY, and a combo piece UNTAPS it, CHECK if you can loop:
+  * Can you generate mana to activate the tap ability?
+  * Does the untap effect work on {card.name}?
+  * If YES to both → This is an INFINITE COMBO
+  
+- If {card.name} COPIES a spell, and that spell UNTAPS {card.name}:
+  * This creates an INFINITE LOOP
+  * Sequence: (1) Pay activation cost, tap Scepter to copy spell → (2) Copied spell untaps Scepter + mana sources → (3) Tap mana sources for mana → (4) Return to step 1
+  * Result: INFINITE spell casts, INFINITE untaps, INFINITE mana (with sufficient mana rocks)
+  * CRITICAL MANA CALCULATION: 
+    - If activation costs {{2}} (like Isochron Scepter), you MUST have mana rocks that produce ≥{{2}}
+    - Example mana rocks: Sol Ring ({{2}}), Arcane Signet ({{1}}), Thought Vessel ({{1}})
+    - Without ≥{{2}} from rocks: You get infinite untaps but NOT infinite mana/casts
+  * Example: Isochron Scepter + Dramatic Reversal + Sol Ring = infinite mana
+  * WITHOUT mana rocks: NOT infinite (you run out of mana to activate)
+
+IMPORTANT: Be honest about which combos work and which don't. If a card doesn't actually combo well, say so.
+If a combo creates an INFINITE LOOP, clearly state: "This is an INFINITE COMBO" and explain the loop sequence."""
 
         answer = self.llm_manager.generate(combo_prompt)
         # Cache the result if enabled

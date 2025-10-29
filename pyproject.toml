@@ -102,6 +102,7 @@ addopts = [
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "e2e: marks tests as end-to-end (deselect with '-m \"not e2e\"')",
+    "integration: marks tests as integration tests requiring database/LLM (deselect with '-m \"not integration\"')",
     "config: marks tests for configuration and provider system (select with '-m config')",
     "config_manager: marks tests for Config class only (select with '-m config_manager')",
     "config_provider: marks tests for ProviderFactory (select with '-m config_provider')",
